@@ -4,6 +4,13 @@
 
 Le dataset est accessible avec ce lien : https://www.kaggle.com/datasets/harshvgh/olympics?select=athlete_events.csv 
 
+Les données proviennent de la plateforme Kaggle, qui propose des jeux de données publics pour la data science. Elles sont issues de sources officielles liées au International Olympic Committee et ont été structurées pour faciliter leur analyse.
+
+Nous avons choisi ce dataset à la fois pour son intérêt personnel, le sport étant un sujet qui nous intéresse toutes les quatre, et pour la quantité importante de données disponibles. Sa richesse (variables démographiques, physiques et sportives) et sa profondeur historique (depuis 1896) offrent un fort potentiel d’analyse.
+
+Ce jeu de données s’inscrit dans un contexte d’analyse exploratoire de données appliquée au sport, et constitue un bon support pour manipuler des données réelles avec R.
+
+
 Dans notre analyse de ce dataset, nous allons nous concentrer sur le document ***athletes_event.csv***, le document *noc_regions.csv* permettant uniquement de lier le NOC et la région, deux colonnes présentes également dans le document *athletes_event.csv*
 
 
