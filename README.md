@@ -19,22 +19,23 @@ Ce document contient des données concernant tous **les athlètes ayant particip
 Il y a environ **136k observations**, et chaque observation correspond à la **participation d'un athlète à une épreuve**. 
 
 Ce dataset est décrit par 15 variables : 
-- **ID : l'identifiant du participant.** Cette valeur est numérique, discrète et unique pour chaque participant. Etant donné que chaque ligne représente une participation, cette valeur n'est pas forcément unique dans le tableau.
-- **Name : le nom (et prénom) du participant.** Cette valeur est nominale.
-- **Gender : le genre du participant.** Ne contient que des valeurs nominales : soit "F" pour les femmes, soit "M" pour les hommes.
-- **Age : l'âge du participant.** Cette valeur est numérique, continue et ordinale.
-- **Height : la taille du participant.** Cette valeur est numérique, discrète et ordinale. *Cette valeur peut ne pas être définie ("NA").*
-- **Weight : le poids du participant.** Cette valeur est numérique, discrète et ordinale. *Cette valeur peut ne pas être définie ("NA").*
-- **Team : l'équipe représentée par le participant.** Cette valeur est nominale. Elle représente généralement le pays de l'athlète.
-- **NOC : le code de 3 lettres désignant le comité national olympique lié au participant.** Cette valeur est nominale.
-- **Games : les JO pendant lesquels la participation a eu lieu.** Cette valeur est nominale et concatène généralement l'année et la saison (ex : "1912 Summer").
-- **Year : l'année de la participation.** Cette valeur est numérique, continue et ordinale.
-- **Season : la saison de JO de la participation.** Cette valeur est nominale et contient soit la valeur "Summer" pour les JO d'été, soit la valeur "Winter" pour les JO d'hiver.
-- **City : la ville hôte des JO.** Cette valeur est nominale.
-- **Sport : la discipline correspondante à la participation.** Cette valeur est nominale.
-- **Event : l'épreuve correspondante à la participation.** Cette valeur est nominale.
-- **Medal : la médaille obtenue lors de l'épreuve.** Cette valeur est nominale et ordinale et peut contenir quatre valeurs : "Gold", "Silver", "Bronze" et "NA".
-
+| **Variable** | **Description**                                       | **Type de valeur** | **Nature des données** | **Remarques**                                                                          |
+| ------------ | ----------------------------------------------------- | ------------------ | ---------------------- | -------------------------------------------------------------------------------------- |
+| **ID**       | Identifiant du participant                            | Numérique          | Discrète               | Unique par participant, mais peut apparaître plusieurs fois (plusieurs participations) |
+| **Name**     | Nom et prénom du participant                          | Texte              | Nominale               |                                                                                        |
+| **Gender**   | Genre du participant                                  | Texte              | Nominale               | "F" (femme) ou "M" (homme)                                                             |
+| **Age**      | Âge du participant                                    | Numérique          | Continue, ordinale     |                                                                                        |
+| **Height**   | Taille du participant                                 | Numérique          | Discrète, ordinale     | Peut être "NA" (Not Available)                                                         |
+| **Weight**   | Poids du participant                                  | Numérique          | Discrète, ordinale     | Peut être "NA"                                                                         |
+| **Team**     | Équipe représentée (souvent son pays)                 | Texte              | Nominale               |                                                                                        |
+| **NOC**      | Code du comité national olympique (3 lettres)         | Texte              | Nominale               |                                                                                        |
+| **Games**    | Édition des JO (année + saison)                       | Texte              | Nominale               | Exemple : "1912 Summer"                                                                |
+| **Year**     | Année de participation                                | Numérique          | Continue, ordinale     |                                                                                        |
+| **Season**   | Saison de JO                                          | Texte              | Nominale               | "Summer" ou "Winter"                                                                   |
+| **City**     | Ville hôte des JO                                     | Texte              | Nominale               |                                                                                        |
+| **Sport**    | Discipline sportive correspondante à la participation | Texte              | Nominale               |                                                                                        |
+| **Event**    | Épreuve correspondante à la participation             | Texte              | Nominale               |                                                                                        |
+| **Medal**    | Médaille obtenue lors de l'épreuve                    | Texte              | Nominale, ordinale     | "Gold", "Silver", "Bronze" ou "NA"                                                     |
 
 ## Plan d’analyses
 
