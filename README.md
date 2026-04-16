@@ -41,26 +41,63 @@ Ce dataset est décrit par 15 variables :
 
 **1. Évolution historique et participation**
 - **Croissance globale :** Quelle est l'évolution du nombre d'athlètes et de nations (NOC) de 1896 à nos jours ?
+    - **Variables :** Year, ID (en comptant les valeurs uniques : n_distinct(ID)), NOC (n_distinct(NOC)).
+    - **Graphique :** Line chart avec une courbe pour les athlètes et une pour les nations.
+    - Remarque : Ajoute des geom_vline pour marquer les événements historiques majeurs
 - **Impact des saisons :** Comment la participation aux JO d'hiver se compare-t-elle à celle des JO d'été en termes de volume ? regarder si des nations sont plus présentes en hiver ou en été ?
+    - **Variables :** Year, Season, ID (unique).
+    - **Graphique :** Stacked area chart
+    - Remarque : JO Hiver et ete avaient lieux la même année jusqu'en 92
 - **Analyse du genre :** Quelle est la proportion d'hommes et de femmes au fil du temps ? Observe-t-on des sports qui ont atteint la parité plus rapidement que d'autres ?
+    - **Variables :** Year, Gender, ID (unique).
+    - **Graphique :** 100% Stacked bar chart
+    - Remarque : marqueur de l'année d'atteinte de la parité pour chaque sport ? 
 - **Stabilité des délégations :** Certaines nations envoient-elles des délégations de taille constante ou observe-t-on des tailles anormales liées au contexte historique ?
+    - **Variables :** Year, NOC, ID (unique).
+    - **Graphique :** Boxplots par décennie, pour voir la dispersion de la taille des délégations.
 
 **2. Morphologie et caractéristiques physiques des athlètes**
 - **Profils types par sport :** Existe-t-il une distribution spécifique de la taille et du poids pour chaque discipline (ex: comparaison entre le Basket-ball et la Gymnastique) ?
+    - **Variables :** Height, Weight, Sport, Gender
+    - **Graphique :** Scatter plot avec le poids en X et la taille en Y
+    - Remarque : utilsation du 2D Density plot (courbes de niveau) pour éviter le chevauchement (overplotting) des points, utiliser des sports aux antipods pour rendre le graph lisible.
 - **Évolution corporelle :** La taille ou le poids moyen des médaillés a-t-il changé en un siècle pour un même sport ?
+    - **Variables :** Year, Height (moyenne), Weight (moyenne), Sport.
+    - **Graphique :** Line chart, lissé (avec geom_smooth()) incluant l'intervalle de confiance.
+    - Remarque : Filtrer uniquement les médaillés ?
 - **Âge de la performance :** Quel est l'âge moyen des médailles par sport ? Existe-t-il des disciplines de précocité versus des disciplines de maturité ?
+    - **Variables :** Age, Sport, Medal.
+    - **Graphique :** Violin plot ou Boxplot, classé par l'âge médian du sport le plus jeune au plus vieux.
 - **Indice de Masse Corporelle (IMC) :** Peut-on comparer l'IMC des athlètes pour identifier des clusters de performance ?
+    - **Variables :** Création d'une variable BMI = Weight / (Height/100)^2.
+    - **Graphique :** Ridgeline plot, via le package ggridges ??
 
 **3. Analyse de la performance et des médailles**
-- **Domination par nation :** Quels pays (NOC) possèdent le plus grand nombre de médailles cumulées ? Evolution des médaille pour les grosse d'élégations. 
+- **Domination par nation :** Quels pays (NOC) possèdent le plus grand nombre de médailles cumulées ? Evolution des médaille pour les grosse d'élégations.
+    - **Variables :** NOC, Medal (filtré sans NA), Event, Year.
+    - **Graphique :** Carte colorée selon volume de médailles ou Horizontal bar chart
 - **Efficacité des délégations :** Quel est le ratio “Médailles obtenues / Nombre d'athlètes envoyés“ par pays ? Une petite délégation peut-elle être plus efficace qu'une grande ?
+    - **Variables :** NOC, ID (unique), Medal (unique par épreuve).
+    - **Graphique :** Scatter plot, Axe X = Taille de la délégation, Axe Y = Nombre de médailles + ligne de régression "moyenne"
+    - Remarque : Créer un indicateur (Nombre d'épreuves avec médaille / Nombre d'épreuves participées).
 - **Spécialisation sportive :** Certaines nations sont-elles ultra-spécialisées dans un sport précis (en nombre de participants ou en médailles obtenues) ?
+    - **Variables :** NOC (filtré sur le top 20 nations), Sport, Medal.
+    - **Graphique :** Heatmap, Nations en Y, Sports en X, intensité de la couleur = pourcentage de médailles du pays venant de ce sport.
 - **Avantage du terrain :** Les pays hôtes (variable City) obtiennent-ils systématiquement plus de médailles l'année où ils reçoivent les Jeux ? Impact sur les prochains jeux ?
+    - **Variables :** NOC, Year, City, Medal. (Il faut un référentiel externe ou croiser City avec la nationalité de la ville).
+    - **Graphique :** Un Slope chart, pour comparer le nombre de médailles d'un pays à l'édition T-1 (avant d'accueillir), à l'édition T (pays hôte), et T+1 (après).
 
 **4. Analyse des disciplines et des épreuves**
 - **Diversité des sports :** Comment le nombre de disciplines (Sport) et d'épreuves (Event) a-t-il évolué ?
+    - **Variables :** Year, Sport (unique), Event (unique), Season.
+    - **Graphique :** Barchart ou en aires empilées qui montre l'inflation du nombre d'épreuves.
+    - Remarque : marqueur années 80 (Télévision).
 - **Popularité et pérennité :** Quels sont les sports historiques présents depuis 1896 et quels sont les sports éphémères qui ont disparu du programme olympique ?
+    - **Variables :** Year, Sport.
+    - **Graphique :** Timeline plot ou diagram de gant, ligne de vie pour chacun des sports    
 - **Athlètes multi disciplines :** Existe-t-il des athlètes qui participent à plusieurs types d'épreuves (meme style de sport ou different type de sport) ?
+    - **Variables :** ID, Name, Sport.
+    - Graphique : Un UpSet plot, montre les intersections entre les sports
 
 
 **Limitations et défis**
