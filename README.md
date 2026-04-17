@@ -70,7 +70,7 @@ Ce dataset est décrit par 15 variables :
     - **Graphique :** Violin plot ou Boxplot, classé par l'âge médian du sport le plus jeune au plus vieux.
 - **Indice de Masse Corporelle (IMC) :** Peut-on comparer l'IMC des athlètes pour identifier des clusters de performance ?
     - **Variables :** Création d'une variable BMI = Weight / (Height/100)^2.
-    - **Graphique :** Ridgeline plot, via le package ggridges ??
+    - **Graphique :** Ridgeline plot, via le package ggridges
 
 **3. Analyse de la performance et des médailles**
 - **Domination par nation :** Quels pays (NOC) possèdent le plus grand nombre de médailles cumulées ? Evolution des médaille pour les grosse d'élégations.
