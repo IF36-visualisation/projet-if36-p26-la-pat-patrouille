@@ -286,4 +286,65 @@ Ainsi, cette analyse montre que **l’âge de la performance dépend fortement d
 
 ## 3. Analyse de la performance et des médailles
 
+### Analyse du cumul des médailles par nation
+
+#### **Quels pays (NOC) possèdent le plus grand nombre de médailles cumulées ?**
+
+L'objectif ici est **d'identifier les nations** qui ont **marqué l'histoire des jeux Olympiques** par leur volume de podiums. Nous supposons que **les grandes puissances** (USA, Russie, pays européens) dominent le classement refletant un **investissement de ces pays dans le sport de haut niveau** despuis des années. 
+
+***Préparation des données***
+
+Pour que l'analyse soit juste, il est primordial de traiter le problème des **sports collectifs**. Dans le dataset original, chaque joueur d'une équipe de basket victorieuse reçoit une ligne "Gold". Si nous comptions simplement les lignes, une victoire des USA en basket compterait pour 12 médailles, alors qu'une victoire au 100m compterait pour 1.
+
+Nous utilisons donc **distinct()** pour ne compter qu'une seule médaille **par pays, par medaille, par événement et par année**. Nous **filtrons ensuite le Top 15** pour obtenir une visualisation lisible.
+
+```{r}
+# Doublon : Pour compter 1 médaille par pays/épreuve, on utilise distinct() sur les colonnes clés.
+medal_data <- athletes_full %>%
+  filter(!is.na(Medal)) %>%
+  distinct(NOC, Games, Year, Event, Medal, .keep_all = TRUE) 
+
+# Calcul du top 15
+top_pays <- medal_data %>%
+  group_by(NOC) %>%
+  summarise(Total_Medals = n()) %>%
+  slice_max(Total_Medals, n = 15)
+
+```
+
+***Affichage du graphique*** 
+
+```{r}
+# Visualisation
+ggplot(top_pays, aes(x = reorder(NOC, Total_Medals), y = Total_Medals)) +
+  geom_col(fill = "#002147", width = 0.7) +
+  
+  # permet de tourner le graph
+  coord_flip() +
+  
+  # info graph
+  labs(
+    title = "Top 15 des puissances olympiques historiques",
+    subtitle = "Nombre total de médailles cumulées (Éditions été et hiver)",
+    x = NULL,
+    y = "Total de médailles remportées"
+  ) +
+  
+  # permet d'enlever le fond gris et d'enlever les lignes horizontal
+  theme_minimal(base_size = 13) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    plot.title = element_text(face = "bold"),
+    axis.title.x = element_text(size = 10, color = "grey30")
+  )
+```
+
+***Analyse***
+
+L'observation du graphique confirme une **suprématie flagrante des États-Unis** (USA). Avec **plus de 2 500  médailles distinctes**, ils distancent massivement toutes les autres nations. Cette avance s'explique par leur **présence constante sur le podium depuis 1896** et leur **polyvalence dans les sports d'été et d'hiver**.
+
+En deuxième position, nous retrouvons **l'Union Soviétique** (URS). Ce résultat est particulièrement remarquable car cette nation n'a **participé aux Jeux que pendant 40 ans** environ (1952-1988). Cela souligne l'incroyable **densité de performance du bloc soviétique** durant la **Guerre Froide. **
+
+Le reste du classement montre un **peloton européen** groupé (Grande-Bretagne, France, Italie, Suède, Allemagne) qui bénéficie de **l'ancienneté de leur participation**. **La France** se situe dans le **haut du classement**, montrant une **régularité historique**.
+
 ## 4. **Analyse des disciplines et des épreuves**
