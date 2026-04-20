@@ -63,7 +63,7 @@ Ce dataset est décrit par 15 variables :
     -   **Variables :** Year, NOC, ID (unique).
     -   **Graphique :** Boxplots par décennie, pour voir la dispersion de la taille des délégations.
 
-2.   **Morphologie et caractéristiques physiques des athlètes**
+2.  **Morphologie et caractéristiques physiques des athlètes**
 
 -   **Profils types par sport :** Existe-t-il une distribution spécifique de la taille et du poids pour chaque discipline (ex: comparaison entre le Basket-ball et la Gymnastique) ?
     -   **Variables :** Height, Weight, Sport, Gender
@@ -117,7 +117,104 @@ Ce dataset est décrit par 15 variables :
 
 # Partie exploration
 
+**Chargement des fichiers** et **concaténation** dans un dataset :
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+
+# Fusion des deux fichiers
+athletes_events_part1 <- read_csv("./data/athletes_events-part1.csv")
+athletes_events_part2 <- read_csv("./data/athletes_events-part2.csv")
+
+athletes_full <- bind_rows(athletes_events_part1, athletes_events_part2)
+```
+
 ## 1. Évolution historique et participation
+
+### Analyse du genre
+
+#### **Quelle est la proportion d'hommes et de femmes au fil du temps ?**
+
+Pour cette question, l'objectif est de principalement de visualiser la **répartition** des participations en termes de genre et leur **évolution**. Le **sport féminin se développant d'année en année**, nous pouvons imaginer que la **proportion des femmes** a **augmenté ces dernières décennies** alors qu'elle était très **faible au début du siècle dernier**.
+
+***Préparation des données***
+
+Afin d'avoir une proportion fiable où **chaque participant compte autant qu'un autre**, il était nécessaire de préparer les données en **supprimant les doublons**. En effet, une personne participant à plusieurs épreuves ne devrait pas avoir plus de poids qu'un participant à une épreuve unique.
+
+Nous avions également besoin de créer une **nouvelle colonne** nommée **proportion** qui représente la proportion des lignes de genres similaires pour une même année.
+
+```{r}
+df_gender <- athletes_full %>%
+   # Suppression des doublons (participants à plusieurs épreuves)
+  distinct(ID, Year, Gender) %>% 
+  
+  # Compte du nombre de lignes par année et par genre 
+  count(Year, Gender) %>%
+  group_by(Year) %>%
+  
+  # Calcul de la répartition de chaque genre par année
+  mutate(proportion = n / sum(n)) %>%
+  ungroup()
+```
+
+***Affichage du graphique***
+
+```{r}
+ggplot(df_gender, aes(x = Year, y = proportion, fill = Gender)) +
+  geom_bar(stat = "identity", position = "fill", width = 2) +
+  
+  # Affichage d'une ligne médiane représentant la parité stricte
+  geom_hline(
+    yintercept = 0.5,
+    linetype = "dashed",
+    colour = "white"
+  ) +
+  
+  # Passage de la valeur de l'ordonnée en %
+  scale_y_continuous(
+    labels = scales::percent_format(accuracy = 1),
+    expand = c(0, 0)
+  ) +
+  
+  # Définition de la plage temporelle
+  scale_x_continuous(breaks = seq(1896, 2016, by = 4)) +
+  scale_fill_manual(
+    values = c("F" = "#1D9E75", "M" = "#7F77DD"),
+    labels = c("F" = "Femmes", "M" = "Hommes")
+  ) +
+  
+  # Définition des données contextuelles
+  labs(
+    title = "Proportion hommes/femmes aux Jeux Olympiques",
+    subtitle = "Ligne pointillée = parité 50/50",
+    x = "Année",
+    y = "Proportion",
+    fill = "Genre"
+  ) +
+  
+  # Définition du thème (police et position)
+  theme(
+    axis.text.x = element_text(angle = 60, hjust = 1),
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 10, colour = "grey45"),
+    plot.caption = element_text(size = 6, colour = "grey55")
+  )
+```
+
+***Analyse***
+
+Tout d'abord, la **première édition** des Jeux Olympiques en 1896 à Atlanta était **interdite aux femmes**. La première année, la proportion d'hommes dans les participants est donc de **100%**.
+
+Depuis cette première édition, on peut voir que **les** **femmes participent de plus en plus**. Les participations féminines ont cependant mis beaucoup de temps à se rapprocher d'une certaine parité. En effet, il aura fallu **92 ans** (1896 - 1988) pour voir une édition avec **un quart de participations féminines** : une très faible croissance de la proportion des participations féminines est à observer sur cette période.
+
+Suite à ce cap des 25%, **la** **proportion** de participations féminines **a** **continué à augmenter** et à se rapprocher de plus en plus des participations masculines, **atteignant 45% en 2016**. Nous ne sommes donc toujours pas à **une réelle parité**, mais celle-ci **tend à être atteinte**. L'ajout de données à propos des JO de Tokyo en 2021 et de Paris en 2024 pourrait préciser cette tendance.
+
+Nous pouvons également observer sur le graphique que **les** **Jeux Olympiques d'hiver comptent moins de participations féminines que les éditions d'été**. Par exemple, nous pouvons notifier des hausses significatives de la participation masculine entre 2004 (été) et 2006 (hiver), 2008 (été) et 2010 (hiver), et 2012 (été) et 2014 (hiver).
+
+**Il reste** donc globalement **une majorité de participations masculines** aux Jeux Olympiques, même si la parité **tend à être atteinte**. Nous pouvons maintenant nous demander **quels sont les sports ayant déjà atteint la parité** et **quels sports impactent négativement la tendance globale,** en restant dominés par une grande majorité masculine et freinant l'avancée vers une représentation équilibrée des genres.
 
 ## 2. Morphologie et caractéristiques physiques des athlètes
 
