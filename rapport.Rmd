@@ -226,7 +226,6 @@ Pour cette question, l’objectif est de visualiser la **distribution de l’âg
 
 Nous pouvons supposer que certaines disciplines très **physiques et explosives**, comme la **gymnastique** ou la **natation**, favorisent des athlètes plus jeunes. À l’inverse, des sports davantage basés sur la **technique, la précision ou la stratégie**, comme le **tir**, l’**équitation** ou la **voile**, pourraient voir des performances atteintes plus tardivement.
 
-
 ***Préparation des données***
 
 Afin d’obtenir une analyse plus fiable et robuste, nous avons choisi de **filtrer les disciplines les moins représentées**. En effet, certains sports comptent trop peu de médaillés dans le dataset, ce qui pourrait biaiser les résultats statistiques.
@@ -235,8 +234,8 @@ Nous avons donc conservé uniquement les sports comptant **au moins 100 médaill
 
 Nous avons également appliqué deux filtres supplémentaires :
 
-* conserver uniquement les **athlètes médaillés**
-* supprimer les observations où **l’âge est manquant**
+-   conserver uniquement les **athlètes médaillés**
+-   supprimer les observations où **l’âge est manquant**
 
 Enfin, les sports ont été **triés par âge médian croissant**, afin de faciliter la lecture comparative entre disciplines de précocité et de maturité.
 
@@ -252,7 +251,6 @@ df_age_medal <- athletes_full %>%
   filter(!is.na(Medal), !is.na(Age)) %>%
   semi_join(sports_valides, by = "Sport")
 ```
-
 
 ***Affichage du graphique***
 
@@ -290,7 +288,7 @@ Ainsi, cette analyse montre que **l’âge de la performance dépend fortement d
 
 #### **Quels pays (NOC) possèdent le plus grand nombre de médailles cumulées ?**
 
-L'objectif ici est **d'identifier les nations** qui ont **marqué l'histoire des jeux Olympiques** par leur volume de podiums. Nous supposons que **les grandes puissances** (USA, Russie, pays européens) dominent le classement refletant un **investissement de ces pays dans le sport de haut niveau** despuis des années. 
+L'objectif ici est **d'identifier les nations** qui ont **marqué l'histoire des jeux Olympiques** par leur volume de podiums. Nous supposons que **les grandes puissances** (USA, Russie, pays européens) dominent le classement refletant un **investissement de ces pays dans le sport de haut niveau** despuis des années.
 
 ***Préparation des données***
 
@@ -312,7 +310,7 @@ top_pays <- medal_data %>%
 
 ```
 
-***Affichage du graphique*** 
+***Affichage du graphique***
 
 ```{r}
 # Visualisation
@@ -341,10 +339,81 @@ ggplot(top_pays, aes(x = reorder(NOC, Total_Medals), y = Total_Medals)) +
 
 ***Analyse***
 
-L'observation du graphique confirme une **suprématie flagrante des États-Unis** (USA). Avec **plus de 2 500  médailles distinctes**, ils distancent massivement toutes les autres nations. Cette avance s'explique par leur **présence constante sur le podium depuis 1896** et leur **polyvalence dans les sports d'été et d'hiver**.
+L'observation du graphique confirme une **suprématie flagrante des États-Unis** (USA). Avec **plus de 2 500 médailles distinctes**, ils distancent massivement toutes les autres nations. Cette avance s'explique par leur **présence constante sur le podium depuis 1896** et leur **polyvalence dans les sports d'été et d'hiver**.
 
-En deuxième position, nous retrouvons **l'Union Soviétique** (URS). Ce résultat est particulièrement remarquable car cette nation n'a **participé aux Jeux que pendant 40 ans** environ (1952-1988). Cela souligne l'incroyable **densité de performance du bloc soviétique** durant la **Guerre Froide. **
+En deuxième position, nous retrouvons **l'Union Soviétique** (URS). Ce résultat est particulièrement remarquable car cette nation n'a **participé aux Jeux que pendant 40 ans** environ (1952-1988). Cela souligne l'incroyable **densité de performance du bloc soviétique** durant la **Guerre Froide.**
 
 Le reste du classement montre un **peloton européen** groupé (Grande-Bretagne, France, Italie, Suède, Allemagne) qui bénéficie de **l'ancienneté de leur participation**. **La France** se situe dans le **haut du classement**, montrant une **régularité historique**.
 
-## 4. **Analyse des disciplines et des épreuves**
+## 4. Analyse des disciplines et des épreuves
+
+### Athlètes multi-disciplines
+
+#### **Existe-t-il des athlètes qui participent à plusieurs types d'épreuves ?**
+
+L'objectif est d'identifier les athlètes ayant participé à **plusieurs disciplines sportives** au cours de leur carrière olympique et de visualiser les **intersections entre sports**. Nous supposons que ce phénomène est **rare mais existant**, notamment entre sports historiquement proches, et qu'il tend à diminuer avec la spécialisation croissante du sport de haut niveau.
+
+***Préparation des données***
+
+Nous travaillons à l'échelle de l'athlète (variable `ID`) en dédoublonnant les combinaisons `ID × Sport`, puis en générant toutes les **paires de sports co-pratiquées** par un même athlète. Nous filtrons les **15 sports les plus fréquents** parmi les multi-disciplinaires et rendons la matrice symétrique pour l'affichage.
+
+```{r}
+# Une ligne par athlète × sport
+df_multi <- athletes_full %>%
+  distinct(ID, Name, Sport) %>%
+  group_by(ID, Name) %>%
+  summarise(nb_sports = n(), sports = list(Sport), .groups = "drop") %>%
+  filter(nb_sports >= 2)
+
+# Sports les plus fréquents chez les multi-disciplinaires
+sports_frequents <- df_multi %>%
+  unnest(sports) %>%
+  count(sports, sort = TRUE) %>%
+  slice_head(n = 15) %>%
+  pull(sports)
+
+# Génération des paires co-pratiquées
+df_paires <- df_multi %>%
+  unnest(sports) %>% filter(sports %in% sports_frequents) %>% rename(sport1 = sports) %>%
+  inner_join(
+    df_multi %>% unnest(sports) %>% filter(sports %in% sports_frequents) %>% rename(sport2 = sports),
+    by = "ID"
+  ) %>%
+  filter(sport1 != sport2) %>%
+  mutate(s1 = if_else(sport1 < sport2, sport1, sport2),
+         s2 = if_else(sport1 < sport2, sport2, sport1)) %>%
+  distinct(ID, s1, s2) %>%
+  count(s1, s2, name = "nb_athletes")
+
+# Matrice symétrique pour la heatmap
+df_heatmap <- bind_rows(df_paires, df_paires %>% rename(s1 = s2, s2 = s1))
+```
+
+***Affichage du graphique***
+
+```{r}
+ggplot(df_heatmap, aes(x = s1, y = s2, fill = nb_athletes)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  geom_text(aes(label = nb_athletes), size = 3, color = "white") +
+  scale_fill_gradient(low = "#C9C6E3", high = "#002147", name = "Nombre\nd'athlètes") +
+  labs(
+    title    = "Co-pratique de disciplines sportives aux Jeux Olympiques",
+    subtitle = "Nombre d'athlètes ayant participé aux deux sports au cours de leur carrière",
+    x = NULL, y = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x   = element_text(angle = 45, hjust = 1),
+    panel.grid    = element_blank(),
+    plot.title    = element_text(face = "bold"),
+    plot.subtitle = element_text(size = 10, colour = "grey45")
+  )
+```
+
+***Analyse***
+
+La heatmap révèle que les intersections les plus fréquentes concernent des sports **appartenant au même univers physique** : Natation/Water-polo, Ski alpin/Ski de fond, ou encore Athlétisme/Pentathlon moderne. Ces paires reflètent une **proximité technique** qui facilite la double participation.
+
+Ce phénomène est par ailleurs **fortement ancré dans le passé** : la grande majorité de ces athlètes ont concouru **avant 1960**, à une époque où les Jeux étaient moins spécialisés et les exigences d'entraînement moins contraignantes. À partir des années 1980, la multi-disciplinarité devient quasi inexistante au niveau élite.
+
+Enfin, il convient de noter que certains sports sont **comptabilisés séparément** dans le dataset alors qu'ils relèvent d'une même famille (ex. : *Gymnastics* et *Artistic Gymnastics*), ce qui peut légèrement **surestimer** le nombre d'athlètes multi-disciplines.
