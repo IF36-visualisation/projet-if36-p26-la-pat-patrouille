@@ -87,18 +87,22 @@ Ce dataset est décrit par 15 variables :
     - **Variables :** NOC, Year, City, Medal. (Il faut un référentiel externe ou croiser City avec la nationalité de la ville).
     - **Graphique :** Un Slope chart, pour comparer le nombre de médailles d'un pays à l'édition T-1 (avant d'accueillir), à l'édition T (pays hôte), et T+1 (après).
 
-**4. Analyse des disciplines et des épreuves**
-- **Diversité des sports :** Comment le nombre de disciplines (Sport) et d'épreuves (Event) a-t-il évolué ?
-    - **Variables :** Year, Sport (unique), Event (unique), Season.
-    - **Graphique :** Barchart ou en aires empilées qui montre l'inflation du nombre d'épreuves.
-    - Remarque : marqueur années 80 (Télévision).
-- **Popularité et pérennité :** Quels sont les sports historiques présents depuis 1896 et quels sont les sports éphémères qui ont disparu du programme olympique ?
-    - **Variables :** Year, Sport.
-    - **Graphique :** Timeline plot ou diagram de gant, ligne de vie pour chacun des sports    
-- **Athlètes multi disciplines :** Existe-t-il des athlètes qui participent à plusieurs types d'épreuves (meme style de sport ou different type de sport) ?
-    - **Variables :** ID, Name, Sport.
-    - Graphique : Un UpSet plot, montre les intersections entre les sports
-
+### 4. Analyse des disciplines et des épreuves : Audit du Programme Olympique
+- **L'Universalité des disciplines (Compétitivité mondiale vs Monopoles) :** Quels sports sont véritablement mondiaux (médailles réparties sur un grand nombre de pays) et lesquels sont des niches dominées par une poignée de nations ?
+    - **Variables :** `Sport`, `NOC` (unique parmi les médaillés), `Year` (filtré sur l'ère moderne).
+    - **Graphique :** Lollipop chart ou Bar chart horizontal.
+    - **Remarque :** Création d'un ratio (*Nombre de pays différents médaillés / Nombre d'épreuves*) pour ne pas pénaliser les sports distribuant peu de médailles.
+- **L'empreinte logistique (Le "coût" en athlètes) :** Quels sont les sports les plus "gourmands" en quotas d'athlètes par rapport au nombre de médailles qu'ils distribuent (ex : comparaison entre les sports collectifs et la natation) ?
+    - **Variables :** `Sport`, `ID` (unique par sport et par édition), `Event` (unique par sport).
+    - **Graphique :** Scatter plot (Axe X = Nombre d'athlètes moyen par édition, Axe Y = Nombre d'épreuves ou médailles distribuées).
+    - **Remarque :** Met en évidence la pression logistique des sports sur le village olympique.
+- **La modernisation du programme (Vers la parité des épreuves) :** Comment l'offre sportive du CIO s'est-elle adaptée pour atteindre la parité ? Comment ont évolué les épreuves masculines, féminines et mixtes ?
+    - **Variables :** `Year`, `Event` (pour extraire le type d'épreuve), `Gender`.
+    - **Graphique :** Diverging bar chart (pyramide inversée) : par année, barres à gauche pour les épreuves "Men's", à droite pour "Women's", et au centre pour les épreuves "Mixed".
+    - **Remarque :** Nécessitera de manipuler des chaînes de caractères (ex : package `stringr`) pour catégoriser le genre directement depuis le nom de l'épreuve.
+- **Pérennité et "Cimetière olympique" (L'instabilité du programme) :** Quels sont les sports "piliers" historiques présents sans interruption, et quels sont les sports éphémères ou de démonstration qui ont disparu du programme ?
+    - **Variables :** `Sport`, `Year` (min, max et comptage des apparitions).
+    - **Graphique :** Timeline plot (diagramme de Gantt) ou Waterfall chart illustrant les entrées et sorties des sports au fil des décennies.
 
 **Limitations et défis**
 - **Biais historique :** Pour les données anciennes, on a moins de données sur la morphologie (taille, poids) avant la seconde guerre mondiale. 
