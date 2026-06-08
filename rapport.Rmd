@@ -1,8 +1,10 @@
 ---
-title: "rapport"
-author: "flavien"
+title: "Les Jeux Olympiques - IF36"
+author: "Lubin LAFORET - Florian PANCHOT - Margot REMY - Flavien VIDAL"
 date: "2026-04-20"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 # Introduction
@@ -347,73 +349,292 @@ Le reste du classement montre un **peloton européen** groupé (Grande-Bretagne,
 
 ## 4. Analyse des disciplines et des épreuves
 
-### Athlètes multi-disciplines
+Dans cette partie, nous adopterons la posture d'un **consultant en stratégie sportive**, engagé par le **Comité International Olympique (CIO)** dans le but d'auditer la santé, l'attractivité et la logistique du programme olympique. L'objectif : décider quels sports garder, lesquels supprimer, comment moderniser les Jeux (parité, audience) et comment gérer la logistique (trop d'épreuves = Jeux trop chers).
 
-#### **Existe-t-il des athlètes qui participent à plusieurs types d'épreuves ?**
+### L'Universalité des disciplines (Compétitivité mondiale vs Monopoles)
 
-L'objectif est d'identifier les athlètes ayant participé à **plusieurs disciplines sportives** au cours de leur carrière olympique et de visualiser les **intersections entre sports**. Nous supposons que ce phénomène est **rare mais existant**, notamment entre sports historiquement proches, et qu'il tend à diminuer avec la spécialisation croissante du sport de haut niveau.
+Le but de cette partie est d'identifier les types de sports qui favorisent l'égalité de chances afin d'intégrer de nouveaux sports pouvant être gagnés par tous, et raviver la compétition.
 
-***Préparation des données***
+**Attention :** Nous avons choisi d'écarter les Jeux d'hiver de cette analyse car tous les pays n'ont pas forcément un climat leur permettant d'avoir accès à la neige ou à la glace, ce qui empêcherait d'office de nombreuses nations de participer et fausserait nos calculs sur l'universalité des sports.
 
-Nous travaillons à l'échelle de l'athlète (variable `ID`) en dédoublonnant les combinaisons `ID × Sport`, puis en générant toutes les **paires de sports co-pratiquées** par un même athlète. Nous filtrons les **15 sports les plus fréquents** parmi les multi-disciplinaires et rendons la matrice symétrique pour l'affichage.
+***Préparer les données***
 
 ```{r}
-# Une ligne par athlète × sport
-df_multi <- athletes_full %>%
-  distinct(ID, Name, Sport) %>%
-  group_by(ID, Name) %>%
-  summarise(nb_sports = n(), sports = list(Sport), .groups = "drop") %>%
-  filter(nb_sports >= 2)
-
-# Sports les plus fréquents chez les multi-disciplinaires
-sports_frequents <- df_multi %>%
-  unnest(sports) %>%
-  count(sports, sort = TRUE) %>%
-  slice_head(n = 15) %>%
-  pull(sports)
-
-# Génération des paires co-pratiquées
-df_paires <- df_multi %>%
-  unnest(sports) %>% filter(sports %in% sports_frequents) %>% rename(sport1 = sports) %>%
-  inner_join(
-    df_multi %>% unnest(sports) %>% filter(sports %in% sports_frequents) %>% rename(sport2 = sports),
-    by = "ID"
+universalite_globale <- athletes_full %>%
+  filter(Year >= 2000, Season == "Summer", !is.na(Medal)) %>%
+  group_by(Sport) %>%
+  summarise(
+    # Nombre de pays uniques ayant eu une médaille
+    Nb_Pays_Medailles = n_distinct(NOC),
+    # Nombre TOTAL d'épreuves organisées (Podiums) sur ces 20 ans
+    Total_Podiums = n_distinct(paste(Year, Event)) 
   ) %>%
-  filter(sport1 != sport2) %>%
-  mutate(s1 = if_else(sport1 < sport2, sport1, sport2),
-         s2 = if_else(sport1 < sport2, sport2, sport1)) %>%
-  distinct(ID, s1, s2) %>%
-  count(s1, s2, name = "nb_athletes")
+  # Le vrai Ratio : Diversité des pays par rapport au nombre de podiums disponibles
+  mutate(Ratio_Universalite = Nb_Pays_Medailles / Total_Podiums) %>%
+  arrange(Ratio_Universalite) # Tri du plus monopolisé au plus universel
 
-# Matrice symétrique pour la heatmap
-df_heatmap <- bind_rows(df_paires, df_paires %>% rename(s1 = s2, s2 = s1))
 ```
 
-***Affichage du graphique***
+#### L'Idéal Olympique (Les sports très universels)
+
+***Graph***
 
 ```{r}
-ggplot(df_heatmap, aes(x = s1, y = s2, fill = nb_athletes)) +
-  geom_tile(color = "white", linewidth = 0.5) +
-  geom_text(aes(label = nb_athletes), size = 3, color = "white") +
-  scale_fill_gradient(low = "#C9C6E3", high = "#002147", name = "Nombre\nd'athlètes") +
+data_universel <- tail(universalite_globale, 15)
+
+ggplot(data_universel, aes(x = Ratio_Universalite, y = reorder(Sport, Ratio_Universalite))) +
+  geom_segment(aes(x = 0, xend = Ratio_Universalite, y = Sport, yend = Sport), color = "lightgray", size = 1) +
+  geom_point(color = "#0072B2", size = 4) + # Point bleu
   labs(
-    title    = "Co-pratique de disciplines sportives aux Jeux Olympiques",
-    subtitle = "Nombre d'athlètes ayant participé aux deux sports au cours de leur carrière",
-    x = NULL, y = NULL
+    title = "Audit CIO : Universalité des Sports (JO d'été 2000-2016)",
+    subtitle = "Sports distribuant des médailles à une grande diversité de nations",
+    x = "Ratio (Nb Nations Médaillées / Nb d'Épreuves)", y = ""
   ) +
-  theme_minimal(base_size = 12) +
+  theme_minimal()
+
+```
+
+On retrouve globalement des sports qui nécessitent peu ou pas d'infrastructures coûteuses (pas de chevaux, pas de bateaux, pas de piscines olympiques). Ils permettent donc à des pays émergents de rivaliser à armes égales avec les grandes puissances mondiales.
+
+#### Les sports sous monopole
+
+```{r}
+
+data_monopole <- head(universalite_globale, 15)
+
+ggplot(data_monopole, aes(x = Ratio_Universalite, y = reorder(Sport, desc(Ratio_Universalite)))) +
+  geom_segment(aes(x = 0, xend = Ratio_Universalite, y = Sport, yend = Sport), color = "lightgray", size = 1) +
+  geom_point(color = "#D55E00", size = 4) + # Point rouge/orange
+  labs(
+    title = "Audit CIO : Les Sports sous 'Monopole' (JO d'été 2000-2016)",
+    subtitle = "Podiums confisqués par quelques nations",
+    x = "Ratio (Nb Nations Médaillées / Nb d'Épreuves)", y = ""
+  ) +
+  theme_minimal()
+
+```
+
+Ce monopole a généralement deux causes : - Une cause économique, comme pour l'Équitation (Equestrianism) ou la Voile (Sailing), qui exigent des financements massifs monopolisés par l'Europe et l'Amérique du Nord. - Cause de politique sportive d'État, comme la Chine qui exerce une domination totale sur le Tennis de Table et le Plongeon, ne laissant que des miettes au reste du monde.
+
+Pour mieux comprendre comment ce manque d'universalité se manifeste, nous avons confronté deux modèles opposés : la Natation (discipline bien en place), face à un sport récemment intégrée (le Rugby à 7).
+
+#### Le choc
+
+***Datas***
+
+```{r}
+df_medals <- athletes_full %>%
+  filter(Year >= 2000, Season == "Summer", !is.na(Medal)) %>%
+  # distinct() avec ces 4 variables permet de fusionner les 11 joueurs de foot en 1 seule ligne "Médaille"
+  distinct(Year, Event, NOC, Medal, .keep_all = TRUE)
+
+```
+
+```{r}
+data_swim <- df_medals %>%
+  filter(Sport == "Swimming") %>%
+  count(NOC, sort = TRUE) %>%
+  mutate(Categorie = ifelse(row_number() <= 8, NOC, "Autres (30 pays)")) %>%
+  group_by(Categorie) %>%
+  summarise(Medailles = sum(n)) %>%
+  arrange(desc(Medailles))
+
+ggplot(data_swim, aes(x = reorder(Categorie, -Medailles), y = Medailles)) +
+  geom_col(fill = "#D55E00") +
+  geom_text(aes(label = Medailles), vjust = -0.5) +
+  labs(title = "Natation : Médailles accaparées (2000-2016)", x = "", y = "Nombre de médailles") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+C'est un sport très "coûteux" (il prend beaucoup de place dans le programme olympique) mais qui récompense au final très peu de diversité. Le gâteau est énorme, mais seuls quelques pays le mangent. Pas vraiment un modèle à reproduire.
+
+```{r}
+data_rugby <- df_medals %>%
+  filter(Sport == "Rugby Sevens") %>%
+  count(NOC, sort = TRUE)
+
+ggplot(data_rugby, aes(x = reorder(NOC, -n), y = n, fill = NOC)) +
+  geom_col() +
+  geom_text(aes(label = n), vjust = -0.5) +
+  labs(title = "Rugby à 7 : La diversité immédiate (2016)", x = "", y = "Nombre de médailles") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+Analyse : Les 6 seules médailles disponibles ont été gagnées par 6 pays différents. Mieux encore, ce sport a permis aux Îles Fidji de gagner la toute première médaille d'or de leur histoire ! Avec un minimum d'épreuves, ce sport a apporté instantanément une immense diversité au tableau des médailles.
+
+#### Conclusion
+
+Si l'objectif est d'avoir des Jeux vraiment mondialisés, il est beaucoup plus stratégique d'ajouter des sports d'équipe à format court (comme le Rugby à 7 ou le Basket 3x3) plutôt que de rajouter sans cesse de nouvelles distances en Natation, qui finiront inévitablement dans la poche des mêmes grandes nations.
+
+### Audit de l'Empreinte Logistique : Le "Coût" en Athlètes
+
+En tant qu'auditeurs, notre second critère est logistique. Le CIO s'est engagé à limiter la taille du village olympique pour réduire le coût des Jeux. Nous devons donc évaluer le "rendement" de chaque sport : combien d'athlètes une discipline amène-t-elle à chaque édition par rapport au nombre de podiums qu'elle organise ?
+
+***Préparer les données***
+
+```{r}
+#install.packages("treemapify")
+library(treemapify)
+
+logistique_treemap <- athletes_full %>%
+  filter(Year >= 2000, Season == "Summer") %>%
+  group_by(Sport, Year) %>%
+  summarise(
+    Nb_Athletes = n_distinct(ID),
+    Nb_Epreuves = n_distinct(Event),
+    .groups = "drop"
+  ) %>%
+  group_by(Sport) %>%
+  summarise(
+    Moyenne_Athletes = round(mean(Nb_Athletes), 0),
+    Moyenne_Epreuves = round(mean(Nb_Epreuves), 0)
+  ) %>%
+  mutate(Ratio_Cout = Moyenne_Athletes / Moyenne_Epreuves)
+```
+
+```{r}
+ggplot(logistique_treemap, aes(
+  area = Moyenne_Athletes,           # La taille = Nombre d'athlètes
+  fill = Ratio_Cout,                 # La couleur = Le ratio (Athlètes / Épreuves)
+  label = paste(Sport, "\n", Moyenne_Athletes, " athl.") # Le texte dans les cases
+)) +
+  geom_treemap() +
+  
+  # Ajout du texte à l'intérieur des cases (blanc, centré, s'adapte à la taille)
+  geom_treemap_text(colour = "white", place = "centre", grow = FALSE, reflow = TRUE) +
+  
+  # Le code couleur : du bleu (bon rendement) au rouge (mauvais rendement)
+  scale_fill_gradient(low = "#0072B2", high = "#D55E00", name = "Ratio : Athlètes par Podium") +
+  
+  labs(
+    title = "Audit CIO : Répartition spatiale du Village Olympique (2000-2016)",
+    subtitle = "Surface = Coût logistique (Lits)  |  Couleur = Rendement (Rouge = Anomalie)"
+  ) +
+  theme_minimal() +
   theme(
-    axis.text.x   = element_text(angle = 45, hjust = 1),
-    panel.grid    = element_blank(),
-    plot.title    = element_text(face = "bold"),
-    plot.subtitle = element_text(size = 10, colour = "grey45")
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "bottom"
   )
 ```
 
-***Analyse***
+On repère 3 cas de figures :
 
-La heatmap révèle que les intersections les plus fréquentes concernent des sports **appartenant au même univers physique** : Natation/Water-polo, Ski alpin/Ski de fond, ou encore Athlétisme/Pentathlon moderne. Ces paires reflètent une **proximité technique** qui facilite la double participation.
+-   les "Volumineux mais rentables" : Ils consomment énormément de lits, mais cet encombrement est totalement justifié par la production massive de médailles (ex: Natation, Athlétisme).
 
-Ce phénomène est par ailleurs **fortement ancré dans le passé** : la grande majorité de ces athlètes ont concouru **avant 1960**, à une époque où les Jeux étaient moins spécialisés et les exigences d'entraînement moins contraignantes. À partir des années 1980, la multi-disciplinarité devient quasi inexistante au niveau élite.
+<!-- -->
 
-Enfin, il convient de noter que certains sports sont **comptabilisés séparément** dans le dataset alors qu'ils relèvent d'une même famille (ex. : *Gymnastics* et *Artistic Gymnastics*), ce qui peut légèrement **surestimer** le nombre d'athlètes multi-disciplines.
+-   les "Discrets et très performants" : Ultra-Rentables, ils nécessitent très peu d'athlètes tout en distribuant un grand nombre de médailles. C'est le format idéal pour le CIO (ex: Lutte, Judo).
+
+-   les sports co : Volumineux et non rentables. Ils occupent beaucoup d'espace, mais leur rendement sportif est catastrophique en mobilisant des centaines d'athlètes pour un seul podium (ex: Football, Basketball).
+
+Pour autant, il persiste une faille importante dans ce diagnostic purement logistique : l'absence de la dimension économique et médiatique (droits TV, billetterie, sponsoring). En effet, si l'on s'arrêtait à cette simple équation "Lits / Médailles", le CIO devrait immédiatement rayer le Football ou le Basketball de son programme. Or, dans la réalité, ce "gouffre" en hébergement est largement compensé par les audiences mondiales et les revenus financiers colossaux qu'ils génèrent. À l'inverse, les sports ultra-rentables logistiquement (comme l'Haltérophilie) sont souvent ceux qui attirent le moins de spectateurs. L'analyse montre donc ici ses limites : le maintien d'un sport aux Jeux Olympiques ne repose pas que sur sa rentabilité sportive, mais sur un compromis indispensable avec sa rentabilité financière.
+
+### Audit de la Modernisation : Vers la Parité des Épreuves
+
+L'un des chantiers les plus vitaux pour la survie et la pertinence du mouvement olympique est sa modernisation sociétale, et notamment la parité. En tant qu'auditeurs, nous ne devons pas seulement regarder le nombre d'athlètes femmes (ce qui a été traité en partie 1), mais auditer l'"offre" du CIO : le programme des épreuves s'est-il équilibré ?
+
+**Préparer les données**
+
+```{r}
+epreuves_genre <- athletes_full %>%
+  filter(Season == "Summer") %>%
+  # On groupe par Année et par Épreuve
+  group_by(Year, Event) %>%
+  # On regarde quels genres d'athlètes ont participé à cette épreuve
+  summarise(Genres_Presents = n_distinct(Gender), 
+            Premier_Genre = first(Gender), 
+            .groups = "drop") %>%
+  # On crée notre catégorie (Mixte si on a 2 genres, sinon Hommes ou Femmes)
+  mutate(Type_Epreuve = case_when(
+    Genres_Presents > 1 ~ "Mixte",
+    Premier_Genre == "M" ~ "Hommes",
+    Premier_Genre == "F" ~ "Femmes"
+  ))
+
+# 2. Compter le nombre d'épreuves par an
+donnees_parite <- epreuves_genre %>%
+  group_by(Year, Type_Epreuve) %>%
+  summarise(Nombre = n(), .groups = "drop") %>%
+  # ASTUCE : On passe le nombre en négatif pour les hommes pour faire la pyramide
+  mutate(Valeur_Graphique = ifelse(Type_Epreuve == "Hommes", -Nombre, Nombre))
+
+```
+
+**Graph**
+
+```{r}
+ggplot(donnees_parite, aes(x = Year, y = Valeur_Graphique, fill = Type_Epreuve)) +
+  # On utilise geom_col au lieu de geom_bar car on a déjà calculé les chiffres
+  geom_col() +
+  
+  # On tourne le graphique (Barres horizontales)
+  coord_flip() +
+  
+  # Les couleurs de l'audit
+  scale_fill_manual(values = c("Hommes" = "#0072B2", "Femmes" = "#D55E00", "Mixte" = "#009E73")) +
+  
+  # On nettoie l'axe Y pour qu'il affiche des chiffres positifs des deux côtés
+  scale_y_continuous(labels = abs) +
+  
+  labs(
+    title = "Audit CIO : La route vers la parité du programme",
+    subtitle = "Évolution de l'offre sportive (Jeux d'été 1896-2016)",
+    x = "Année",
+    y = "Nombre d'épreuves au programme",
+    fill = "Catégorie"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "top"
+  )
+```
+
+Le graphique en "pyramide inversée" illustre l'évolution de l'offre sportive du CIO et révèle trois phases clés :
+
+-   Le lourd héritage masculin (Avant 1980) : Un programme pensé historiquement par et pour les hommes. Les épreuves féminines sont très **minoritaires**.
+
+-   La stratégie de rattrapage (1980 - 2000+) : **Ajout massif** et systématique d'épreuves féminines (ex: marathon, lutte, boxe) pour rattraper le retard et tendre vers le 50/50.
+
+-   Le "Hack" des **épreuves Mixtes** (L'innovation) : L'apparition récente des épreuves mixtes (relais, judo par équipe) est la solution stratégique parfaite. Elle garantit la parité absolue sur le podium, sans avoir besoin d'augmenter le nombre de lits au village olympique.
+
+
+### Audit de la Pérennité : Héritage vs "Cimetière Olympique"
+
+**Traitement des données**
+```{r}
+timeline_data <- athletes_full %>%
+  filter(Season == "Summer") %>%
+  group_by(Sport, Year) %>%
+  # Si un athlète a participé, c'est que le sport était au programme
+  summarise(Present = 1, .groups = 'drop')
+
+```
+
+**Graph**
+```{r}
+# 2. Création du graphique (Frise / Gantt)
+ggplot(timeline_data, aes(x = Year, y = reorder(Sport, desc(Sport)))) +
+  # shape = 15 permet d'avoir des carrés pour créer une ligne continue
+  geom_point(color = "#0072B2", shape = 15, size = 1.5) +
+  
+  # Repères historiques : Les 3 années annulées pour cause de Guerres Mondiales
+  geom_vline(xintercept = c(1916, 1940, 1944), linetype = "dashed", color = "red", alpha = 0.5) +
+  
+  labs(
+    title = "Audit CIO : Le 'Cimetière' et l'Héritage Olympique",
+    subtitle = "Présence des disciplines aux Jeux d'été (1896-2016)",
+    x = "Année", y = ""
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.text.y = element_text(size = 7), # Texte plus petit pour que tous les sports rentrent
+    panel.grid.minor = element_blank()
+  )
+
+```
+IL y a trop de sports
+
