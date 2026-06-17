@@ -19,6 +19,7 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem("Dashboard Efficacité", tabName = "dashboard", icon = icon("chart-bar")),
+      menuItem("Analyse par sport", tabName = "sports", icon = icon("running")),
       
       # Sélecteur des 6 dernières éditions
       selectInput(
@@ -39,6 +40,80 @@ ui <- dashboardPage(
   
   dashboardBody(
     tabItems(
+      tabItem(
+        tabName = "sports",
+        
+        # Sélecteur des sports
+        fluidRow(
+          box(
+            title = "Sélection des sports",
+            width = 12,
+            status = "primary",
+            solidHeader = TRUE,
+            
+            selectInput(
+              inputId = "selected_sports",
+              label = "Choisir un ou plusieurs sports :",
+              choices = sort(unique(athletes_full$Sport)),
+              selected = c("Basketball", "Swimming"),
+              multiple = TRUE
+            )
+          )
+        ),
+        # Ligne 1 : Graphique âge et morpho
+        
+        fluidRow(
+          box( 
+            title = "Distribution âge des médaillés", 
+            width = 6, 
+            plotOutput("plot_age") ),
+          box(
+            title = "Distribution Taille-Poids",
+            width = 6,
+            
+            
+            radioButtons(
+              inputId = "morpho_layout",
+              label = "Affichage :",
+              choices = c(
+                "Par sport" = "facet",
+                "Superposé" = "overlay"
+              ),
+              selected = "facet",
+              inline = TRUE
+            ),
+            
+            plotOutput("morpho_plot", height = "400px")
+          )
+          
+        ),
+        # Ligne 2 : Graphique poids et taille
+        fluidRow(
+          
+          box(
+            title = "Évolution taille moyenne",
+            width = 6,
+            plotOutput("plot_height")
+          ),
+          box(
+            title = "Évolution poids moyen",
+            width = 6,
+            plotOutput("plot_weight")
+          )
+          
+          
+          
+        ),
+        #Ligne 3 : IMC
+        fluidRow(
+          box(
+            title = "Distribution de l'IMC",
+            width = 12,
+            
+            plotOutput("plot_imc", height = "400px")
+          )
+        )
+      ),
       tabItem(
         tabName = "dashboard",
         
@@ -164,7 +239,184 @@ server <- function(input, output) {
       theme_minimal() +
       theme(legend.position = "none")
   })
+  
+  #Page 2
+  
+  #Filtrage
+  data_sports_reactive <- reactive({
+    req(input$selected_sports)
+    
+    athletes_full %>%
+      filter(Sport %in% input$selected_sports) 
+  })
+  # Calcul IMC 
+  data_imc_reactive <- reactive({
+    req(input$selected_sports)
+    
+    athletes_full %>%
+      filter(
+        Sport %in% input$selected_sports,
+        !is.na(Height),
+        !is.na(Weight)
+      ) %>%
+      mutate(
+        IMC = Weight / (Height / 100)^2
+      )
+  })
+  #--- GRAPHIQUE 1 : AGE ---
+  output$plot_age <- renderPlot({
+    df <- data_sports_reactive() %>%
+      filter(!is.na(Medal), !is.na(Age))
+    
+    ggplot(df, aes(x = Sport, y = Age, fill = Sport)) +
+      geom_boxplot() +
+      coord_flip() +
+      theme_minimal() +
+      theme(legend.position = "none")
+  })
+  #--- GRAPHIQUE 2 : MORPHO ---
+  output$morpho_plot <- renderPlot({
+    
+    df_morpho <- data_sports_reactive() %>%
+      filter(!is.na(Height), !is.na(Weight))
+    
+    # MODE 1 : facettes (premier graph)
+    if (input$morpho_layout == "facet") {
+      
+      ggplot(df_morpho, aes(x = Weight, y = Height, color = Sport)) +
+        geom_density_2d() +
+        facet_wrap(~Sport) +
+        labs(
+          x = "Poids (kg)",
+          y = "Taille (cm)"
+        ) +
+        theme_minimal()
+    }
+    
+    # MODE 2 : superposé (deuxième graph)
+    else {
+      
+      ggplot(df_morpho, aes(x = Weight, y = Height, color = Sport)) +
+        geom_density_2d(linewidth = 0.8) +
+        labs(
+          x = "Poids (kg)",
+          y = "Taille (cm)",
+          color = "Sport"
+        ) +
+        theme_minimal()
+    }
+  })
+  #--- GRAPHIQUE 3 : TAILLE ---
+  output$plot_height <- renderPlot({
+    
+    df <- data_sports_reactive() %>%
+      filter(!is.na(Medal), !is.na(Height)) %>%
+      group_by(Year, Sport) %>%
+      summarise(mean_height = mean(Height), .groups = "drop")
+    
+    sports_multi <- df %>%
+      count(Sport) %>%
+      filter(n > 1) %>%
+      pull(Sport)
+    
+    sports_single <- df %>%
+      count(Sport) %>%
+      filter(n == 1) %>%
+      pull(Sport)
+    
+    ggplot() +
+      
+      # Courbes lissées si plusieurs années
+      geom_smooth(
+        data = filter(df, Sport %in% sports_multi),
+        aes(x = Year, y = mean_height, color = Sport),
+        se = FALSE,
+        linewidth = 1.2
+      ) +
+      
+      # Point si une seule année
+      geom_point(
+        data = filter(df, Sport %in% sports_single),
+        aes(x = Year, y = mean_height, color = Sport),
+        size = 4
+      ) +
+      
+      labs(
+        x = "Année",
+        y = "Taille moyenne (cm)"
+      ) +
+      
+      theme_minimal()
+    
+  })
+  #--- GRAPHIQUE 4 : POIDS ---
+  output$plot_weight <- renderPlot({
+    
+    df <- data_sports_reactive() %>%
+      filter(!is.na(Medal), !is.na(Weight)) %>%
+      group_by(Year, Sport) %>%
+      summarise(mean_weight = mean(Weight), .groups = "drop")
+    
+    sports_multi <- df %>%
+      count(Sport) %>%
+      filter(n > 1) %>%
+      pull(Sport)
+    
+    sports_single <- df %>%
+      count(Sport) %>%
+      filter(n == 1) %>%
+      pull(Sport)
+    
+    ggplot() +
+      
+      geom_smooth(
+        data = filter(df, Sport %in% sports_multi),
+        aes(x = Year, y = mean_weight, color = Sport),
+        se = FALSE,
+        linewidth = 1.2
+      ) +
+      
+      geom_point(
+        data = filter(df, Sport %in% sports_single),
+        aes(x = Year, y = mean_weight, color = Sport),
+        size = 4
+      ) +
+      
+      labs(
+        x = "Année",
+        y = "Poids moyen (kg)"
+      ) +
+      
+      theme_minimal()
+    
+  })
+  #--- GRAPHIQUE 5 : IMC ---
+  output$plot_imc <- renderPlot({
+    
+    df <- data_imc_reactive()
+    
+    ggplot(
+      df,
+      aes(
+        x = IMC,
+        y = reorder(Sport, IMC, median),
+        fill = Sport
+      )
+    ) +
+      geom_density_ridges(
+        alpha = 0.7,
+        scale = 0.8
+      ) +
+      labs(
+        x = "IMC",
+        y = "Sport"
+      ) +
+      theme_minimal() +
+      theme(legend.position = "none")
+  })
 }
+
+
 
 # 4. RUN APP ------------------------------------------------------------------
 shinyApp(ui, server)
