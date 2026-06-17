@@ -390,7 +390,8 @@ server <- function(input, output) {
       theme_minimal()
     
   })
-  #--- GRAPHIQUE 5 : IMC ---
+  
+#--- GRAPHIQUE 5 : IMC ---
   output$plot_imc <- renderPlot({
     
     df <- data_imc_reactive()
@@ -407,6 +408,38 @@ server <- function(input, output) {
         alpha = 0.7,
         scale = 0.8
       ) +
+      
+      # Limites IMC
+      geom_vline(
+        xintercept = 18.5,
+        color = "#e74c3c",
+        linetype = "dashed",
+        linewidth = 1
+      ) +
+      geom_vline(
+        xintercept = 24.9,
+        color = "#e74c3c",
+        linetype = "dashed",
+        linewidth = 1
+      ) +
+      
+      # Texte au-dessus
+      annotate(
+        "text",
+        x = 18.5,
+        y = Inf,
+        label = "18.5",
+        color = "#e74c3c",
+        vjust = 1.5
+      ) +
+      annotate(
+        "text",
+        x = 24.9,
+        y = Inf,
+        label = "24.9",
+        color = "#e74c3c",
+        vjust = 1.5
+      ) +
       labs(
         x = "IMC",
         y = "Sport"
@@ -415,8 +448,6 @@ server <- function(input, output) {
       theme(legend.position = "none")
   })
 }
-
-
 
 # 4. RUN APP ------------------------------------------------------------------
 shinyApp(ui, server)
