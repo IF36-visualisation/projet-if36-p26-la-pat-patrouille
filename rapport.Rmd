@@ -218,71 +218,178 @@ Nous pouvons également observer sur le graphique que **les** **Jeux Olympiques 
 
 **Il reste** donc globalement **une majorité de participations masculines** aux Jeux Olympiques, même si la parité **tend à être atteinte**. Nous pouvons maintenant nous demander **quels sont les sports ayant déjà atteint la parité** et **quels sports impactent négativement la tendance globale,** en restant dominés par une grande majorité masculine et freinant l'avancée vers une représentation équilibrée des genres.
 
+---
+
 ## 2. Morphologie et caractéristiques physiques des athlètes
+
+Afin d’explorer plus finement les différences morphologiques entre disciplines, nous avons utilisé une **interface interactive développée avec Shiny** permettant de sélectionner dynamiquement les sports à comparer.
+
+Cette approche présente deux avantages : elle facilite les comparaisons visuelles et permet d’adapter l’analyse selon le profil recherché (sports d’endurance, sports collectifs, disciplines techniques, etc.).
+
+Pour illustrer les résultats, nous avons sélectionné cinq disciplines présentant des caractéristiques très contrastées :
+
+* **Basketball** : sport collectif où la taille constitue souvent un avantage ;
+* **Volleyball** : discipline également orientée vers la taille mais avec des contraintes physiques différentes ;
+* **Rugby** : sport de contact nécessitant puissance et masse corporelle ;
+* **Rhythmic Gymnastics** : discipline mettant en avant légèreté, souplesse et contrôle corporel ;
+* **Shooting** : sport davantage orienté vers la précision et la stabilité.
+
+L’objectif est de mettre en évidence l’existence éventuelle de profils corporels spécifiques selon les disciplines.
+
+---
 
 ### Âge de la performance
 
-#### **Quel est l'âge moyen des médaillés par sport ? Existe-t-il des disciplines de précocité versus des disciplines de maturité ?**
+#### Quel est l'âge moyen des médaillés par sport ? Existe-t-il des disciplines de précocité versus des disciplines de maturité ?
 
-Pour cette question, l’objectif est de visualiser la **distribution de l’âge des athlètes médaillés selon les disciplines sportives**, afin d’identifier les sports où la performance survient plus tôt dans la carrière et ceux où elle semble davantage liée à l’expérience et à la maturité.
+L’objectif de cette analyse est d’étudier la **distribution de l’âge des athlètes médaillés selon leur discipline**, afin d’identifier si certains sports favorisent des performances précoces alors que d’autres valorisent davantage l’expérience.
 
-Nous pouvons supposer que certaines disciplines très **physiques et explosives**, comme la **gymnastique** ou la **natation**, favorisent des athlètes plus jeunes. À l’inverse, des sports davantage basés sur la **technique, la précision ou la stratégie**, comme le **tir**, l’**équitation** ou la **voile**, pourraient voir des performances atteintes plus tardivement.
+Nous pouvons supposer que les disciplines nécessitant des qualités physiques très spécifiques, comme la souplesse ou l’explosivité, conduisent à des performances plus jeunes, tandis que des sports davantage centrés sur la maîtrise technique permettent des carrières plus longues.
 
-***Préparation des données***
+#### Préparation des données
 
-Afin d’obtenir une analyse plus fiable et robuste, nous avons choisi de **filtrer les disciplines les moins représentées**. En effet, certains sports comptent trop peu de médaillés dans le dataset, ce qui pourrait biaiser les résultats statistiques.
+Pour cette analyse :
 
-Nous avons donc conservé uniquement les sports comptant **au moins 100 médailles**, ce qui a conduit à l’exclusion de **19 disciplines**.
+* seuls les **athlètes ayant remporté une médaille** ont été conservés ;
+* les observations avec un **âge manquant** ont été supprimées ;
+* les sports ont été sélectionnés via l’interface interactive.
 
-Nous avons également appliqué deux filtres supplémentaires :
+La distribution des âges a été représentée à l’aide de **boxplots**, permettant d’observer l’âge médian ainsi que la dispersion des performances.
 
--   conserver uniquement les **athlètes médaillés**
--   supprimer les observations où **l’âge est manquant**
+XXXX GRAPH AGE
 
-Enfin, les sports ont été **triés par âge médian croissant**, afin de faciliter la lecture comparative entre disciplines de précocité et de maturité.
+#### Analyse
 
-```{r}
-# Définition des sports valides : sport ayant plus de 100 médailles
-sports_valides <- athletes_full %>%
-  filter(!is.na(Medal)) %>%
-  count(Sport) %>%
-  filter(n >= 100)
+Sur l’ensemble du jeu de données, l’**âge moyen des athlètes médaillés est d’environ 25 ans**.
 
-# Filtrage des médaillés avec âge connu
-df_age_medal <- athletes_full %>%
-  filter(!is.na(Medal), !is.na(Age)) %>%
-  semi_join(sports_valides, by = "Sport")
-```
+Nous observons que le **basketball**, le **volleyball** et le **rugby** présentent des distributions relativement proches de cette valeur. Ces disciplines semblent atteindre leur optimum dans une période où se combinent **capacités physiques élevées, expérience compétitive et maturité sportive**.
 
-***Affichage du graphique***
+La **gymnastique rythmique** se distingue nettement avec des âges plus faibles. Les performances semblent y être atteintes plus tôt dans la carrière sportive. Ce résultat peut s’expliquer par les exigences de la discipline, qui reposent fortement sur la **souplesse**, la **mobilité**, la **coordination fine** et un **rapport poids/puissance très exigeant**, caractéristiques généralement plus marquées chez les athlètes jeunes.
 
-```{r fig.width=14, fig.height=9}
-ggplot(df_age_medal, aes(y = reorder(Sport, Age, median), x = Age)) +
-  geom_violin(fill = "#DDD5E3", color = "#6F6DA3", alpha = 0.7, width = 1) +
-  coord_flip() +
-  labs(
-    title = "Distribution de l'âge des médaillés selon le sport",
-    y = "Sport",
-    x = "Âge"
-  ) +
-  theme(
-    axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)
-  )
-```
+À l’inverse, le **tir** présente une distribution beaucoup plus étalée avec des athlètes médaillés sur une plage d’âge très large. Contrairement aux sports où les performances dépendent principalement des capacités physiques, le tir mobilise davantage des compétences liées à la **précision**, à la **concentration**, au **contrôle émotionnel** et à l’**expérience accumulée au cours de la carrière**.
 
-***Analyse***
+Cette première analyse montre ainsi que **l’âge optimal de performance varie fortement selon les exigences propres à chaque discipline sportive**.
 
-Le graphique met en évidence une **forte hétérogénéité des âges de performance selon les disciplines sportives**.
+---
 
-Tout d’abord, les sports dits de **précocité** apparaissent clairement en bas du classement. On y retrouve notamment la **gymnastique**, la **natation**, le **plongeon** ou encore le **patinage artistique**, où l’âge médian des médaillés se situe généralement entre **18 et 22 ans**. Ces disciplines reposent sur des qualités comme la **souplesse**, la **vitesse d’exécution** et des capacités physiques optimales atteintes tôt dans la carrière.
+### Profils types par sport
 
-À l’inverse, certaines disciplines présentent un âge médian nettement plus élevé. C’est le cas du **tir**, de la **voile**, du **curling**, de l’**équitation** ou encore de certains concours artistiques, où de nombreux médaillés dépassent les **30 ans**. Dans ces sports, la **maîtrise technique**, l’**expérience** et la **gestion du stress** jouent un rôle déterminant.
+#### Existe-t-il une distribution spécifique de la taille et du poids pour chaque discipline ?
 
-Nous observons également que plusieurs disciplines présentent une **grande dispersion des âges**, avec à la fois des médaillés très jeunes et d’autres beaucoup plus âgés. Cela peut s’expliquer par la diversité des épreuves au sein d’un même sport ou par l’évolution des carrières sportives au fil des générations.
+L’objectif est ici d’observer si certaines disciplines présentent des profils physiques caractéristiques à travers la **distribution conjointe de la taille et du poids**.
 
-Enfin, une majorité de disciplines se concentre autour de la tranche des **23 à 28 ans**, ce qui correspond probablement à une période optimale combinant **performance physique**, **expérience compétitive** et **maturité mentale**.
+Nous pouvons nous attendre à retrouver des regroupements distincts selon les contraintes du sport : les disciplines nécessitant de la puissance ou un avantage mécanique devraient favoriser certains gabarits, tandis que d’autres privilégieraient la légèreté ou la mobilité.
 
-Ainsi, cette analyse montre que **l’âge de la performance dépend fortement de la nature du sport pratiqué** : certaines disciplines favorisent la précocité, tandis que d’autres valorisent la longévité et l’expérience sportive.
+#### Préparation des données
+
+Nous avons conservé uniquement :
+
+* les sports sélectionnés dans l’interface Shiny ;
+* les observations avec une **taille et un poids renseignés**.
+
+Afin d’éviter le chevauchement des observations, nous avons utilisé des **courbes de densité 2D**, qui mettent en évidence les zones où les athlètes sont les plus concentrés.
+
+XXXX GRAPHS TAILLE-POIDS
+#### Analyse
+
+Le graphique met en évidence des **profils morphologiques très différenciés selon les disciplines**.
+
+La **gymnastique rythmique** apparaît comme le sport le plus distinct : les athlètes se concentrent autour de tailles et poids relativement faibles. Ce résultat est cohérent avec les exigences de la discipline, qui valorise la **souplesse, l’agilité, l’amplitude des mouvements et le contrôle corporel**.
+
+À l’opposé, le **basketball** présente une concentration située sur des tailles nettement plus élevées. Une grande taille offre un avantage mécanique important pour atteindre le panier, défendre ou couvrir davantage d’espace.
+
+Le **volleyball** montre une distribution très proche de celle du basketball, particulièrement lorsque les courbes sont superposées. Les deux disciplines recherchent des athlètes grands avec une masse corporelle relativement similaire afin d’optimiser la portée verticale et l’efficacité au filet.
+
+Le **rugby** occupe une position intermédiaire mais davantage étendue sur l’axe du poids, ce qui reflète la coexistence de profils très différents selon les postes (avants plus massifs, arrières plus mobiles).
+
+Enfin, le **tir** présente une distribution plus compacte et moins extrême, suggérant que les performances dépendent davantage de facteurs techniques que de caractéristiques physiques particulières.
+
+Cette analyse montre que certaines disciplines semblent sélectionner naturellement des morphologies spécifiques.
+
+---
+
+### Évolution corporelle
+
+#### La taille ou le poids moyen des médaillés a-t-il changé au cours du temps ?
+
+Cette question vise à observer si le profil physique des athlètes médaillés s’est transformé au fil du dernier siècle.
+
+Nous pouvons supposer qu’avec la professionnalisation du sport, l’amélioration de l’entraînement et une sélection plus poussée des athlètes, certains sports ont progressivement convergé vers des morphologies plus spécialisées.
+
+#### Préparation des données
+
+Nous avons :
+
+* conservé uniquement les **athlètes médaillés** ;
+* supprimé les valeurs manquantes ;
+* calculé pour chaque année et chaque sport :
+
+  * la taille moyenne ;
+  * le poids moyen.
+
+Les tendances ont ensuite été représentées à l’aide de courbes lissées.
+
+XXX GRAPH TAILLE ET POIDS
+
+#### Analyse
+
+Les résultats montrent que les caractéristiques physiques ont globalement évolué au cours du temps.
+
+Concernant la **taille**, le basketball se distingue avec une augmentation progressive puis une stabilisation autour de valeurs élevées. Cette tendance peut s’expliquer par une sélection croissante des profils les plus avantagés biomécaniquement.
+
+Le **volleyball** suit une trajectoire très proche et semble progressivement converger vers des caractéristiques comparables à celles observées en basketball. Cette proximité confirme l’importance croissante de la taille dans les sports où le jeu aérien est central.
+
+À l’inverse, la **gymnastique rythmique** conserve des tailles plus faibles et relativement stables dans le temps.
+
+Concernant le **poids**, la gymnastique reste également la discipline la plus éloignée des autres avec des valeurs nettement inférieures, cohérentes avec les contraintes esthétiques et techniques du sport.
+
+Le rugby conserve des poids élevés, ce qui traduit l’importance de la puissance et du contact physique.
+
+Ainsi, bien que les profils aient évolué avec le temps, chaque discipline semble conserver un « profil cible » relativement stable.
+
+---
+
+### Indice de Masse Corporelle (IMC)
+
+#### Peut-on comparer l’IMC des athlètes pour identifier des profils de performance ?
+
+L’objectif est ici d’étudier si certaines disciplines présentent des regroupements particuliers en termes d’IMC.
+
+L’IMC est calculé selon :
+
+[
+IMC=\frac{Poids}{(Taille/100)^2}
+]
+
+Selon les recommandations médicales classiques :
+
+* **IMC < 18,5** : insuffisance pondérale ;
+* **18,5 ≤ IMC ≤ 24,9** : zone considérée comme normale ;
+* **IMC > 25** : surpoids.
+
+#### Préparation des données
+
+Nous avons :
+
+* calculé l’IMC pour chaque athlète disposant d’une taille et d’un poids ;
+* conservé uniquement les sports sélectionnés ;
+* représenté les distributions via un **Ridgeline plot**.
+
+XXXXXX GRAPH IMC
+
+#### Analyse
+
+Le graphique montre que les disciplines ne présentent pas les mêmes distributions d’IMC.
+
+Le **rugby** apparaît majoritairement au-dessus de la zone classique considérée comme normale. Cependant, cela ne signifie pas nécessairement un excès de masse grasse : l’IMC ne distingue pas le **muscle du tissu adipeux**, et les rugbymen développent généralement une masse musculaire importante pour répondre aux exigences de puissance et de contact.
+
+À l’opposé, la **gymnastique rythmique** présente une distribution largement située sous ou proche du seuil de 18,5. Plusieurs facteurs peuvent l’expliquer : recherche d’un faible poids relatif, exigences esthétiques, entraînements intensifs et parfois pression sur le maintien d’une silhouette très fine.
+
+Les autres disciplines se concentrent davantage autour de la plage standard.
+
+Cette analyse montre cependant une limite importante : **l’IMC constitue un indicateur imparfait pour étudier les sportifs de haut niveau**. Deux athlètes ayant le même IMC peuvent présenter des compositions corporelles très différentes. Pour évaluer précisément la condition physique d’un sportif, des indicateurs comme le **pourcentage de masse grasse** ou la **composition corporelle** seraient plus pertinents.
+
+---
 
 ## 3. Analyse de la performance et des médailles
 
