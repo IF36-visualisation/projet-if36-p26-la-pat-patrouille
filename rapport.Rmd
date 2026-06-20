@@ -7,6 +7,10 @@ output:
   html_document: default
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
 # Introduction
 
 ## Données
@@ -61,7 +65,7 @@ Ce dataset est décrit par 15 variables :
     -   **Variables :** Year, Gender, ID (unique).
     -   **Graphique :** 100% Stacked bar chart
     -   Remarque : marqueur de l'année d'atteinte de la parité pour chaque sport ?
--   **Stabilité des délégations :** Certaines nations envoient-elles des délégations de taille constante ou observe-t-on des tailles anormales liées au contexte historique ?
+-   **Stabilité des délégations :** Comment varie la taille des grandes délégations par décennie et le statut d'accueillir les Jeux génère-t-il un volume d'athlètes exceptionnel ?
     -   **Variables :** Year, NOC, ID (unique).
     -   **Graphique :** Boxplots par décennie, pour voir la dispersion de la taille des délégations.
 
@@ -119,9 +123,9 @@ Ce dataset est décrit par 15 variables :
 
 # Partie exploration
 
-**Chargement des fichiers** et **concaténation** dans un dataset :
 
 ```{r}
+# Chargement des fichiers et concaténation dans un dataset :
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
@@ -135,59 +139,315 @@ athletes_full <- bind_rows(athletes_events_part1, athletes_events_part2)
 
 ## 1. Évolution historique et participation
 
+### Croissance globale : Quelle est l'évolution du nombre d'athlètes et de nations (NOC) de 1896 à nos jours ?
+
+Pour cette première visualisation, l'objectif était d'analyser la **dynamique globale et l'essor des Jeux Olympiques modernes** de leur création en 1896 à la fin de notre période d'études en 2016.
+
+Nous avons pris la décision d'utiliser le nombre d'athlètes et de nations en paramètres pour faire ressortir deux principales idées. Tout d'abord, la variation du nombre de nations est un bon indicateur pour déterminer l'ouverture de l'événement au monde et sa capacité à donner leur chance à des plus petites nations. D'un point de vue un peu plus logistique, l'évolution du nombre d'athlètes permet quant à elle de visualiser la capacité de l'événement à accueillir de plus en plus d'athlètes.
+
+***Préparation des données***
+
+Sur ces graphiques, nous avons décidé de marquer par des **"pauses" dans la courbe** les principaux événements historiques auxquels les Jeux Olympiques ont dû face en ajoutant notamment des valeurs nulles lorsqu’une édition a été annulée. Nous avons aussi normalisé les deux axes des abscisses pour permettre une comparaison rapide des courbes.
+
+```{r}
+df_croissance_brute <- athletes_full %>%
+  group_by(Year) %>%
+  summarise(
+    Nb_Athletes = n_distinct(ID),
+    Nb_Nations  = n_distinct(NOC)
+  ) %>%
+  ungroup()
+
+df_guerres <- tibble(
+  Year = c(1916, 1940, 1944),
+  Nb_Athletes = c(0, 0, 0),
+  Nb_Nations = c(0, 0, 0)
+)
+
+df_croissance <- bind_rows(df_croissance_brute, df_guerres) %>%
+  arrange(Year)
+
+facteur_echelle <- max(df_croissance_brute$Nb_Athletes) / max(df_croissance_brute$Nb_Nations)
+
+ggplot(df_croissance, aes(x = Year)) +
+  geom_line(aes(y = Nb_Athletes, color = "Athlètes"), linewidth = 1.2) +
+  geom_point(aes(y = Nb_Athletes, color = "Athlètes"), size = 2) +
+  
+  geom_line(aes(y = Nb_Nations * facteur_echelle, color = "Nations"), linewidth = 1.2) +
+  geom_point(aes(y = Nb_Nations * facteur_echelle, color = "Nations"), size = 2) +
+  
+  geom_vline(xintercept = c(1916, 1940, 1944), linetype = "dashed", color = "red", alpha = 0.6) +
+  geom_vline(xintercept = 1980, linetype = "dotted", color = "orange", alpha = 0.8) +
+  
+  annotate("text", x = 1916, y = 8500, label = "Guerres\nMondiales", color = "red", size = 3, hjust = -0.1) +
+  annotate("text", x = 1980, y = 8500, label = "Boycott\nMoscou", color = "orange", size = 3, hjust = -0.1) +
+  
+  scale_x_continuous(breaks = seq(1896, 2016, by = 12)) +
+  scale_y_continuous(
+    name = "Nombre total d'athlètes",
+    sec.axis = sec_axis(~ . / facteur_echelle, name = "Nombre de nations (NOC)")
+  ) +
+  
+  scale_color_manual(
+    values = c("Athlètes" = "#3182bd", "Nations" = "#c51b8a"),
+    name = "Indicateurs"
+  ) +
+  
+  labs(
+    title = "Évolution historique de la participation aux Jeux Olympiques",
+    subtitle = "Croissance du nombre unique d'athlètes et de comités nationaux (1896 - 2016)",
+    x = "Année"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 10, color = "grey45"),
+    legend.position = "bottom"
+  )
+```
+
+***Analyse***
+
+Sur ce graphique, notre vision pré-attentive est troublée car la fin de notre plage temporelle est marquée par une oscillation des courbes. Cela est dû au changement de déroulement des JO avant 1992, où les deux saisons de l’événement étaient regroupées dans la même année. On voit donc directement les **différences numériques de participation entre les deux saisons** : il y a à la fois moins d’athlètes participants et moins de nations participantes. Cette différence est notamment due au fait que les disciplines des JO d'été peuvent se pratiquer dans davantage de pays et nécessitent moins d'infrastructures que celles des JO d'hiver. Nous pouvons également observer un rapport nations/athlètes légèrement supérieur en hiver, ce qui signifie que les délégations font en moyenne participer moins d’athlètes en hiver qu’en été.
+
+Après avoir analysé ces oscillations, il serait préférable de regrouper les éditions hiver/été sur des périodes de 4 ans pour pouvoir analyser la dynamique globale de l’événement. Nous avons donc réalisé le graphique ci-dessous en prenant en compte ce nouveau critère.
+```{r}
+df_croissance_brute <- athletes_full %>%
+  group_by(Year) %>%
+  summarise(
+    Nb_Athletes = n_distinct(ID),
+    Nb_Nations  = n_distinct(NOC)
+  ) %>%
+  ungroup()
+
+df_guerres <- tibble(
+  Year = c(1916, 1940, 1944),
+  Nb_Athletes = c(0, 0, 0),
+  Nb_Nations = c(0, 0, 0)
+)
+
+df_croissance_4ans <- bind_rows(df_croissance_brute, df_guerres) %>%
+  mutate(Period_4ans = Year %/% 4 * 4) %>%
+  group_by(Period_4ans) %>%
+  summarise(
+    Nb_Athletes = max(Nb_Athletes), 
+    Nb_Nations  = max(Nb_Nations)
+  ) %>%
+  ungroup()
+
+facteur_echelle <- max(df_croissance_4ans$Nb_Athletes) / max(df_croissance_4ans$Nb_Nations)
+hauteur_texte <- max(df_croissance_4ans$Nb_Athletes) * 0.85
+
+ggplot(df_croissance_4ans, aes(x = Period_4ans)) +
+  geom_line(aes(y = Nb_Athletes, color = "Athlètes"), linewidth = 1.2) +
+  geom_point(aes(y = Nb_Athletes, color = "Athlètes"), size = 2) +
+  
+  geom_line(aes(y = Nb_Nations * facteur_echelle, color = "Nations"), linewidth = 1.2) +
+  geom_point(aes(y = Nb_Nations * facteur_echelle, color = "Nations"), size = 2) +
+
+  geom_vline(xintercept = c(1916, 1940, 1944), linetype = "dashed", color = "red", alpha = 0.6) +
+  geom_vline(xintercept = 1980, linetype = "dotted", color = "orange", alpha = 0.8) +
+  
+  annotate("text", x = 1916, y = 8500, label = "Guerres\nMondiales", color = "red", size = 3, hjust = -0.1) +
+  annotate("text", x = 1980, y = 8500, label = "Boycott\nMoscou", color = "orange", size = 3, hjust = -0.1) +
+  
+  scale_x_continuous(breaks = seq(1896, 2016, by = 12)) +
+  scale_y_continuous(
+    name = "Volume maximum par Olympiade (4 ans)",
+    sec.axis = sec_axis(~ . / facteur_echelle, name = "Nombre de nations (NOC)")
+  ) +
+  
+  scale_color_manual(
+    values = c("Athlètes" = "#3182bd", "Nations" = "#c51b8a"),
+    name = "Indicateurs"
+  ) +
+  
+  labs(
+    title = "Tendance globale de la participation aux Jeux Olympiques",
+    subtitle = "Cumul fusionné (Été + Hiver) par périodes de 4 ans (1896 - 2016)",
+    x = "Période (Début de l'Olympiade)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "bottom"
+  )
+```
+
+Globalement, on peut observer une **hausse constante des deux courbes sur toute la période** de notre dataset. En effet, les premiers jeux olympiques n’étaient destinés qu’à quatorze nations et quelques centaines d’athlètes tandis que de nos jours plus de 10 000 athlètes et 190 nations sont présents lors de l’événement.
+
+Les deux courbes évoluent relativement de la même manière au cours du temps. Il peut donc y avoir un lien entre le nombre de nations et d’athlètes, ce qui peut témoigner du fait que l’augmentation du nombre d’athlètes est aussi due à l’intégration de nouvelles nations au programme olympique. Ce n’est cependant probablement pas le seul paramètre entraînant une augmentation du nombre de participants, le nombre de sports étant également un paramètre déterminant la capacité d’accueil de l’événement.
+
+Nous pouvons aussi observer l’impact des événements politiques mondiaux sur la participation. Même si durant les guerres les éditions ont été annulées, nous pouvons voir que les éditions précédant et suivant chaque guerre présentent environ le même nombre d’athlètes. Les guerres n’ont donc pas eu d’impact négatif sur la croissance de l’événement, en termes de nombre de nations et de participants en tout cas.
+
+Nous pouvons aussi visualiser une forte baisse dans la participation en 1980 lors du **boycott de Moscou**. Ce mouvement d’opposition a été initié par les États-Unis pour protester contre l'invasion soviétique de l'Afghanistan. L’édition suivante a quant à elle été boycottée à son tour par les alliés soviétiques, mouvement que l’on peut moins observer sur la courbe.
+
+### Impact des saisons : Comment la participation aux JO d'hiver se compare-t-elle à celle des JO d'été en termes de volume ?
+
+Nous avons rapidement vu dans les graphiques précédents qu’il y a moins de participants aux Jeux Olympiques d’hiver que d’été, mais ces graphiques n’ont pas été conçus pour comparer les affluences des deux événements. Nous avons donc décidé de **comparer les volumes à l’aide d’un graphique d’aires empilées**.
+
+***Préparation des données***
+
+Pour ce graphique, nous avons également ajouté les éditions annulées à cause des guerres en leur associant des valeurs nulles.
+
+```{r}
+df_seasons_brute <- athletes_full %>%
+  group_by(Year, Season) %>%
+  summarise(Nb_Athletes = n_distinct(ID), .groups = "drop")
+
+df_annulees <- tibble(
+  Year = c(1916, 1940, 1940, 1944, 1944),
+  Season = c("Summer", "Summer", "Winter", "Summer", "Winter"),
+  Nb_Athletes = c(0, 0, 0, 0, 0)
+)
+
+df_seasons <- bind_rows(df_seasons_brute, df_annulees) %>%
+  arrange(Year, desc(Season)) %>%
+  mutate(Edition = paste(Year, if_else(Season == "Summer", "Été", "Hiver")))
+
+df_seasons$Edition <- factor(df_seasons$Edition, levels = unique(df_seasons$Edition))
+
+ggplot(df_seasons, aes(x = Edition, y = Nb_Athletes, fill = Season, group = Season)) +
+  geom_area(position = "stack", alpha = 0.85, color = "white", linewidth = 0.1) +
+  
+  geom_vline(xintercept = c(which(levels(df_seasons$Edition) == "1916 Été"), 
+                            which(levels(df_seasons$Edition) == "1940 Hiver")), 
+             linetype = "dotted", color = "red", alpha = 0.7, linewidth = 0.7) +
+  
+  annotate("text", x = which(levels(df_seasons$Edition) == "1940 Hiver"), 
+           y = max(df_seasons$Nb_Athletes) * 1.1, 
+           label = "Guerres mondiales", color = "red", size = 3, hjust = 1.1) +
+
+  scale_fill_manual(
+    values = c("Summer" = "#E65C00", "Winter" = "#2B7A94"),
+    labels = c("Summer" = "JO d'Été", "Winter" = "JO d'Hiver"),
+    name = "Saison"
+  ) +
+  
+  scale_x_discrete(breaks = levels(df_seasons$Edition)[seq(1, length(levels(df_seasons$Edition)), by = 4)]) +
+  
+  labs(
+    title = "Impact des saisons sur la participation olympique",
+    subtitle = "Volume d'athlètes uniques empilés (1896 - 2016)",
+    x = "Édition des Jeux",
+    y = "Nombre total d'athlètes (Cumulé)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 9),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 10, color = "grey45"),
+    legend.position = "bottom"
+  )
+```
+
+***Analyse***
+
+L’analyse sautant aux yeux dans ce graphique est la **grande domination des Jeux Olympiques d'été** : le graphique est en grande majorité orange.
+
+Comme sur les graphiques précédents, nous voyons bien les pauses durant les guerres et l’impact du boycott de Moscou sur la participation.
+
+Sur ce graphique, nous avons pour la première fois l’entièreté de la courbe des Jeux d’hiver et pouvons voir que la séparation des saisons en 1992 n’a pas vraiment eu d’impact sur la capacité d’accueil de l’événement. Une légère croissance au long de l’histoire des Jeux Olympiques hivernaux est cependant importante à notifier. Nous remarquons aussi pour la première fois que la première édition des JO d’hiver a eu lieu en 1924.
+
+Notre dataset s’arrêtant sur une édition de Jeux d’été, un petit bug visuel dû à l’arrêt de l’aire des JO d’hiver fait croire à une soudaine décroissance dans la participation aux JO d’été. Celle-ci est évidemment faussée : l’aire d’été continue de grandir sur cette période.
+
+Un petit bémol demeure sur ce graphique : l’aire dédiée aux Jeux Olympiques d'été étant positionnée au-dessus de celle des Jeux d'hiver, sa propre vitesse d'évolution s'additionne visuellement à la première. Le *stacked area chart* n’est donc pas forcément le type de visualisation le plus adapté à la comparaison de la progression des deux courbes, même si elle nous a permis d’analyser les différences saisonnières sur différents aspects. Nous avons donc décidé de **créer un line chart classique pour mieux visualiser les deux tendances** et affiner notre analyse.
+
+```{r}
+df_saisons_brute <- athletes_full %>%
+  group_by(Year, Season) %>%
+  summarise(Nb_Athletes = n_distinct(ID), .groups = "drop")
+
+df_annulees <- tibble(
+  Year = c(1916, 1940, 1940, 1944, 1944),
+  Season = c("Summer", "Summer", "Winter", "Summer", "Winter"),
+  Nb_Athletes = c(0, 0, 0, 0, 0)
+)
+
+df_tendances_saisons <- bind_rows(df_saisons_brute, df_annulees) %>%
+  mutate(Period_4ans = Year %/% 4 * 4) %>%
+  group_by(Period_4ans, Season) %>%
+  summarise(Nb_Athletes = max(Nb_Athletes), .groups = "drop")
+
+ggplot(df_tendances_saisons, aes(x = Period_4ans, y = Nb_Athletes, color = Season, group = Season)) +
+  geom_line(linewidth = 1.3) +
+  geom_point(size = 2.5) +
+  
+  geom_vline(xintercept = c(1916, 1940), linetype = "dashed", color = "red", alpha = 0.5) +
+  
+  scale_x_continuous(breaks = seq(1896, 2016, by = 12)) +
+  scale_y_continuous(labels = scales::comma) +
+  
+  scale_color_manual(
+    values = c("Summer" = "#E65C00", "Winter" = "#2B7A94"),
+    labels = c("Summer" = "JO d'Été", "Winter" = "JO d'Hiver"),
+    name = "Saison"
+  ) +
+  
+  labs(
+    title = "Comparaison de la vitesse d'évolution : JO d'Été vs JO d'Hiver",
+    subtitle = "Tendances par blocs de 4 ans (1896 - 2016)",
+    x = "Période (Bloc de 4 ans)",
+    y = "Nombre d'athlètes uniques"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 10, color = "grey45"),
+    legend.position = "bottom"
+  )
+```
+
+Ce graphique nous confirme la différence de croissance entre les deux saisons et la **forte domination des Jeux d’été lors des dernières éditions**, accueillant environ 3,5 fois plus d’athlètes.
+
 ### Analyse du genre
 
 #### **Quelle est la proportion d'hommes et de femmes au fil du temps ?**
 
-Pour cette question, l'objectif est de principalement de visualiser la **répartition** des participations en termes de genre et leur **évolution**. Le **sport féminin se développant d'année en année**, nous pouvons imaginer que la **proportion des femmes** a **augmenté ces dernières décennies** alors qu'elle était très **faible au début du siècle dernier**.
+Pour cette question, l'objectif est principalement de visualiser la **répartition et l'évolution des participations en termes de genre**. Le sport féminin se développant d'année en année, nous pouvons imaginer que la proportion des femmes a augmenté ces dernières décennies alors qu'elle était très faible au début du siècle dernier.
 
 ***Préparation des données***
 
-Afin d'avoir une proportion fiable où **chaque participant compte autant qu'un autre**, il était nécessaire de préparer les données en **supprimant les doublons**. En effet, une personne participant à plusieurs épreuves ne devrait pas avoir plus de poids qu'un participant à une épreuve unique.
+Afin d'avoir une proportion fiable où chaque participant compte autant qu'un autre, il était nécessaire de préparer les données en **supprimant les doublons**. En effet, une personne participant à plusieurs épreuves ne devrait pas avoir plus de poids qu'un participant à une épreuve unique.
 
-Nous avions également besoin de créer une **nouvelle colonne** nommée **proportion** qui représente la proportion des lignes de genres similaires pour une même année.
+Nous avions également besoin de créer une nouvelle colonne nommée proportion qui représente la proportion des lignes de genres similaires pour une même année.
 
 ```{r}
 df_gender <- athletes_full %>%
-   # Suppression des doublons (participants à plusieurs épreuves)
   distinct(ID, Year, Gender) %>% 
   
-  # Compte du nombre de lignes par année et par genre 
   count(Year, Gender) %>%
   group_by(Year) %>%
   
-  # Calcul de la répartition de chaque genre par année
   mutate(proportion = n / sum(n)) %>%
   ungroup()
 ```
-
-***Affichage du graphique***
 
 ```{r}
 ggplot(df_gender, aes(x = Year, y = proportion, fill = Gender)) +
   geom_bar(stat = "identity", position = "fill", width = 2) +
   
-  # Affichage d'une ligne médiane représentant la parité stricte
   geom_hline(
     yintercept = 0.5,
     linetype = "dashed",
     colour = "white"
   ) +
   
-  # Passage de la valeur de l'ordonnée en %
   scale_y_continuous(
     labels = scales::percent_format(accuracy = 1),
     expand = c(0, 0)
   ) +
   
-  # Définition de la plage temporelle
   scale_x_continuous(breaks = seq(1896, 2016, by = 4)) +
   scale_fill_manual(
     values = c("F" = "#1D9E75", "M" = "#7F77DD"),
     labels = c("F" = "Femmes", "M" = "Hommes")
   ) +
   
-  # Définition des données contextuelles
   labs(
     title = "Proportion hommes/femmes aux Jeux Olympiques",
     subtitle = "Ligne pointillée = parité 50/50",
@@ -196,7 +456,6 @@ ggplot(df_gender, aes(x = Year, y = proportion, fill = Gender)) +
     fill = "Genre"
   ) +
   
-  # Définition du thème (police et position)
   theme(
     axis.text.x = element_text(angle = 60, hjust = 1),
     legend.position = "bottom",
@@ -208,15 +467,197 @@ ggplot(df_gender, aes(x = Year, y = proportion, fill = Gender)) +
 
 ***Analyse***
 
-Tout d'abord, la **première édition** des Jeux Olympiques en 1896 à Atlanta était **interdite aux femmes**. La première année, la proportion d'hommes dans les participants est donc de **100%**.
+Tout d'abord, la première édition des Jeux Olympiques en 1896 à Athènes était **entièrement interdite aux femmes**. La première année, la proportion d'hommes dans les participants est donc de 100%.
 
-Depuis cette première édition, on peut voir que **les** **femmes participent de plus en plus**. Les participations féminines ont cependant mis beaucoup de temps à se rapprocher d'une certaine parité. En effet, il aura fallu **92 ans** (1896 - 1988) pour voir une édition avec **un quart de participations féminines** : une très faible croissance de la proportion des participations féminines est à observer sur cette période.
+Depuis cette première édition, on peut voir que les femmes participent de plus en plus. Les participations féminines ont cependant mis beaucoup de temps à se rapprocher d'une certaine parité. En effet, il aura fallu 92 ans (1896 - 1988) pour voir une édition avec un quart de participations féminines : une très faible croissance de la proportion des participations féminines est à observer sur cette période.
 
-Suite à ce cap des 25%, **la** **proportion** de participations féminines **a** **continué à augmenter** et à se rapprocher de plus en plus des participations masculines, **atteignant 45% en 2016**. Nous ne sommes donc toujours pas à **une réelle parité**, mais celle-ci **tend à être atteinte**. L'ajout de données à propos des JO de Tokyo en 2021 et de Paris en 2024 pourrait préciser cette tendance.
+Suite à ce cap des 25%, la proportion de participations féminines a continué à augmenter et à se rapprocher de plus en plus des participations masculines, atteignant 45% en 2016. Nous ne sommes donc toujours pas à une réelle parité, mais celle-ci **tend progressivement à être atteinte**. L'ajout de données à propos des JO de Tokyo en 2021 et de Paris en 2024 pourrait préciser cette tendance.
 
-Nous pouvons également observer sur le graphique que **les** **Jeux Olympiques d'hiver comptent moins de participations féminines que les éditions d'été**. Par exemple, nous pouvons notifier des hausses significatives de la participation masculine entre 2004 (été) et 2006 (hiver), 2008 (été) et 2010 (hiver), et 2012 (été) et 2014 (hiver).
+Nous pouvons également observer sur le graphique que les Jeux Olympiques d'hiver comptent moins de participations féminines que les éditions d'été. Par exemple, nous pouvons notifier des hausses significatives de la participation masculine entre 2004 (été) et 2006 (hiver), 2008 (été) et 2010 (hiver), et 2012 (été) et 2014 (hiver).
 
-**Il reste** donc globalement **une majorité de participations masculines** aux Jeux Olympiques, même si la parité **tend à être atteinte**. Nous pouvons maintenant nous demander **quels sont les sports ayant déjà atteint la parité** et **quels sports impactent négativement la tendance globale,** en restant dominés par une grande majorité masculine et freinant l'avancée vers une représentation équilibrée des genres.
+Il reste donc globalement une majorité de participations masculines aux Jeux Olympiques, même si la parité tend à être atteinte. Nous pouvons maintenant nous demander quels sont les sports ayant déjà atteint la parité et quels sports impactent négativement la tendance globale, en restant dominés par une grande majorité masculine et freinant l'avancée vers une représentation équilibrée des genres.
+
+#### **Observe-t-on des sports qui ont atteint la parité plus rapidement que d'autres ?**
+
+Pour répondre à cette question, l’objectif est de retrouver à la fois tous les sports ayant atteint la parité dans les participations et le **nombre d’années qu’il a fallu attendre pour l’atteindre** depuis l’instauration du sport.
+
+***Préparation des données***
+
+Nous avons décidé de représenter l’atteinte de la parité par un **lollipop chart**, avec toutes les lignes de vie des sports ayant atteint la parité. Nous avons déterminé que la parité était atteinte lorsque le pourcentage de participation féminine se trouvait entre 45% et 55% lors d’une édition, la parité parfaite étant un peu trop précise à atteindre.
+
+```{r}
+# 1. Calcul des proportions par genre et par édition
+df_sport_gender <- athletes_full %>%
+  distinct(ID, Year, Sport, Gender) %>%
+  count(Year, Sport, Gender) %>%
+  group_by(Year, Sport) %>%
+  mutate(prop_femmes = n / sum(n)) %>%
+  filter(Gender == "F") %>%
+  ungroup()
+
+# 2. Identification de la première année d'apparition de CHAQUE sport
+df_debut_sports <- athletes_full %>%
+  group_by(Sport) %>%
+  summarise(Annee_Debut = min(Year, na.rm = TRUE), .groups = "drop")
+
+# 3. Calcul de l'année de parité et jointure avec l'année de début
+df_parite_sports <- df_sport_gender %>%
+  filter(prop_femmes >= 0.45, prop_femmes <= 0.55) %>%
+  group_by(Sport) %>%
+  summarise(Annee_Parite = min(Year, na.rm = TRUE), .groups = "drop") %>%
+  inner_join(df_debut_sports, by = "Sport") %>%
+  mutate(
+    Annees_Attente = Annee_Parite - Annee_Debut,
+    # Si le sport est paritaire dès le début (0 an), on met une étiquette spécifique ou "0 ans"
+    Label_Attente = if_else(Annees_Attente == 0, "Dès l'instauration", paste0(Annees_Attente, " ans"))
+  ) %>%
+  arrange(Annee_Parite)
+
+# 4. Création du graphique
+ggplot(df_parite_sports, aes(x = reorder(Sport, -Annee_Parite), y = Annee_Parite)) +
+  # CHANGEMENT CLÉ : yend pointe maintenant vers Annee_Debut
+  geom_segment(aes(xend = reorder(Sport, -Annee_Parite), yend = Annee_Debut), 
+               color = "#1D9E75", linewidth = 0.6) +
+  
+  # Point matérialisant l'année où la parité est atteinte
+  geom_point(color = "#1D9E75", size = 3.5) +
+  
+  # Point optionnel pour matérialiser le début historique (très élégant visuellement)
+  geom_point(aes(y = Annee_Debut), color = "grey60", size = 1.5, shape = 1) +
+  
+  # Ajustement du texte pour éviter qu'il ne chevauche les points
+  geom_text(aes(label = Label_Attente), hjust = -0.15, vjust = 0.4, size = 2.8, color = "grey30") +
+  
+  coord_flip() +
+  # Ajustement des limites pour laisser de la place aux textes à droite
+  scale_y_continuous(breaks = seq(1896, 2016, by = 20), limits = c(1896, 2040)) +
+  
+  labs(
+    title = "Atteinte la parité par discipline olympique",
+    subtitle = "Première édition (45%-55% de femmes) et durée écoulée pour l'atteindre",
+    x = NULL,
+    y = "Chronologie (1896 - 2016)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 10, color = "grey45"),
+    axis.text.y = element_text(face = "bold")
+  )
+```
+
+***Analyse***
+
+Nous pouvons d’abord observer sur ce diagramme que **27 sports ont déjà atteint la parité**, ce qui représente un peu plus de la majorité des disciplines étudiées.
+
+Au total, 7 sports étaient paritaires dès leur instauration. Cela n’est pas un événement rencontré fréquemment, le golf faisant partie de ce groupe alors qu’il est arrivé dans le programme olympique en 1900. Le sport le plus récent de notre dataset ayant atteint cet objectif est le rugby à 7, probablement puisque c’est un sport collectif et que le nombre d’équipes et de joueurs par équipe est réglementé. Entre temps, d’autres sports comme le badminton, le triathlon et le taekwondo ont également été paritaires dès leur entrée dans le programme.
+
+Certaines lignes de vie très longues s’observent sur le graphique. En effet, des sports historiques de l’événement n’ont atteint la parité que très tard. C’est particulièrement le cas du tennis, du tir à l’arc, de l’athlétisme et de l’escrime. Dans le cas de l’athlétisme, cela peut peut-être être expliqué par le très grand nombre de disciplines impliquées, demandant des progrès dans le règlement de beaucoup d’épreuves.
+
+Nous pouvons aussi observer sur ce graphique une **période de progrès majeurs concentrée entre 1992 et 2000**, durant laquelle 17 sports ont subitement atteint cet objectif de parité.
+
+### Stabilité des délégations : Comment varie la taille des grandes délégations par décennie et le statut d'accueillir les Jeux génère-t-il un volume d'athlètes exceptionnel ?
+
+L’objectif de cette visualisation est d’analyser la dispersion des 20 plus grandes délégations olympiques au fil des décennies et de mesurer l’impact du statut de pays organisateur sur le volume d’athlètes participants à leur édition. 
+
+***Préparation des données***
+
+Pour répondre à cette question, nous nous sommes concentrés sur le comportement des délégations majeures. Nous avons donc uniquement gardé les 20 plus grandes nations de chaque décennie. Les données sont également séparées par saison à l’aide de la librairie ggrepel étant donné que le volume de participant différent grandement entre les deux événements.
+
+
+```{r fig.width=16, fig.height=6}
+library(ggrepel)
+
+df_delegations <- athletes_full %>%
+  group_by(Year, Season, NOC) %>%
+  summarise(Taille_Delegation = n_distinct(ID), .groups = "drop") %>%
+  mutate(Decade = paste0(Year %/% 10 * 10, "s"))
+
+pays_hotes <- tibble(
+  Year = c(1896, 1900, 1904, 1908, 1912, 1920, 1924, 1924, 1928, 1928, 1932, 1932, 1936, 1936, 1948, 1948, 1952, 1952, 1956, 1956, 1960, 1960, 1964, 1964, 1968, 1968, 1972, 1972, 1976, 1976, 1980, 1980, 1984, 1984, 1988, 1988, 1992, 1992, 1994, 1996, 1998, 2000, 2002, 2004, 2006, 2008, 2010, 2012, 2014, 2016),
+  Season = c("Summer", "Summer", "Summer", "Summer", "Summer", "Summer", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer", "Winter", "Summer"),
+  NOC_Hote = c("GRE", "FRA", "USA", "GBR", "SWE", "BEL", "FRA", "FRA", "NED", "SUI", "USA", "USA", "GER", "GER", "GBR", "SUI", "FIN", "NOR", "AUS", "ITA", "ITA", "USA", "JPN", "AUT", "MEX", "FRA", "GER", "JPN", "CAN", "AUT", "RUS", "USA", "USA", "YUG", "KOR", "CAN", "ESP", "FRA", "NOR", "USA", "JPN", "AUS", "USA", "GRE", "ITA", "CHN", "CAN", "GBR", "RUS", "BRA")
+)
+
+df_delegations <- df_delegations %>%
+  left_join(pays_hotes, by = c("Year", "Season")) %>%
+  mutate(
+    Statut = if_else(NOC == NOC_Hote, "Pays Hôte", "Normal"),
+    Season_Label = if_else(Season == "Summer", "JO d'Été", "JO d'Hiver")
+  )
+
+top_20_noc <- athletes_full %>%
+  group_by(NOC) %>%
+  summarise(Total_Historic = n_distinct(ID)) %>%
+  slice_max(Total_Historic, n = 20) %>%
+  pull(NOC)
+
+df_delegations_top <- df_delegations %>%
+  filter(NOC %in% top_20_noc)
+
+ggplot(df_delegations_top, aes(x = Decade, y = Taille_Delegation)) +
+  geom_boxplot(fill = "#2B7A94", alpha = 0.4, color = "grey30", outlier.shape = NA) +
+  
+  geom_jitter(
+    data = filter(df_delegations_top, Statut == "Normal"),
+    color = "grey50", size = 1.2, alpha = 0.3, width = 0.15
+  ) +
+  
+  geom_point(
+    data = filter(df_delegations_top, Statut == "Pays Hôte"),
+    aes(color = Season), size = 2.8, alpha = 0.95
+  ) +
+  
+  geom_text_repel(
+    data = filter(df_delegations_top, Statut == "Pays Hôte"),
+    aes(label = paste0(NOC, " (", Year, ")"), color = Season),
+    size = 2.4,
+    fontface = "bold",
+    direction = "both",
+    nudge_x = 0.25,
+    box.padding = 0.35,
+    point.padding = 0.3,
+    max.overlaps = Inf,
+    segment.size = 0.3,
+    segment.alpha = 0.5,
+    show.legend = FALSE
+  ) +
+  
+  facet_wrap(~ Season_Label, scales = "free_y") +
+  
+  scale_x_discrete(expand = expansion(mult = c(0.05, 0.15))) +
+  
+  scale_color_manual(
+    values = c("Summer" = "#E65C00", "Winter" = "#0077B6"),
+    labels = c("Summer" = "Hôte d'Été", "Winter" = "Hôte d'Hiver"),
+    name = "Statut"
+  ) +
+  
+  labs(
+    title = "Analyse comparative de la taille des délégations et effet du pays hôte",
+    subtitle = "Dispersion par décennie (Top 20 nations)",
+    x = "Décennie",
+    y = "Nombre d'athlètes uniques par délégation"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 14),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold", size = 12, color = "grey20"),
+    strip.background = element_rect(fill = "grey95", color = "transparent")
+  )
+```
+
+***Analyse :*** 
+
+L'observation des Jeux d'hiver montre que les boxplots s'élèvent de manière continue au fil du temps, ce qui traduit une ***présence de plus en plus forte des grandes nations***. La limite inférieure des boîtes est également en hausse constante : cela signifie que même les nations les plus faibles de ce Top 20 connaissent une augmentation structurelle de leur nombre d'athlètes.
+
+Concernant l'impact de l'organisation des Jeux, ***les pays hôtes se positionnent systématiquement parmi les délégations les plus massives*** de leur décennie. Ce phénomène s'explique principalement par les privilèges réglementaires et les places réservées d'office au pays organisateur dans de nombreuses disciplines.
+
+L'édition de 1908 au Royaume-Uni illustre parfaitement cette dynamique de manière extrême. Alors que le nombre total d'athlètes toutes nations confondues avoisinait les 2 000 participants, le pays hôte a envoyé à lui seul environ 700 athlètes. Ce volume exceptionnel représente un ***record historique de concentration*** pour une nation organisatrice dans l'histoire des Jeux Olympiques.
 
 ---
 
