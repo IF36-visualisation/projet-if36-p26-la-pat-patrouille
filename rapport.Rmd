@@ -840,15 +840,15 @@ Cette analyse montre cependant une limite importante : **l’IMC constitue un in
 
 ### Analyse du cumul des médailles par nation
 
-#### **Quels pays (NOC) possèdent le plus grand nombre de médailles cumulées ?**
+#### Quels pays (NOC) possèdent le plus grand nombre de médailles cumulées ?
 
-L'objectif ici est **d'identifier les nations** qui ont **marqué l'histoire des jeux Olympiques** par leur volume de podiums. Nous supposons que **les grandes puissances** (USA, Russie, pays européens) dominent le classement refletant un **investissement de ces pays dans le sport de haut niveau** despuis des années.
+L'objectif ici est d'identifier les nations qui ont **marqué l'histoire des jeux Olympiques** par leur volume de podiums. Nous supposons que les grandes puissances (USA, Russie, pays européens) dominent le classement refletant un investissement de ces pays dans le sport de haut niveau despuis des années.
 
 ***Préparation des données***
 
-Pour que l'analyse soit juste, il est primordial de traiter le problème des **sports collectifs**. Dans le dataset original, chaque joueur d'une équipe de basket victorieuse reçoit une ligne "Gold". Si nous comptions simplement les lignes, une victoire des USA en basket compterait pour 12 médailles, alors qu'une victoire au 100m compterait pour 1.
+Pour que l'analyse soit juste, il est primordial de traiter le problème des sports collectifs. Dans le dataset original, chaque joueur d'une équipe de basket victorieuse reçoit une ligne "Gold". Si nous comptions simplement les lignes, une victoire des USA en basket compterait pour 12 médailles, alors qu'une victoire au 100m compterait pour 1.
 
-Nous utilisons donc **distinct()** pour ne compter qu'une seule médaille **par pays, par medaille, par événement et par année**. Nous **filtrons ensuite le Top 15** pour obtenir une visualisation lisible.
+Nous utilisons donc **distinct()** pour ne compter qu'une seule médaille par pays, par medaille, par événement et par année. Nous filtrons ensuite le Top 15 pour obtenir une visualisation lisible.
 
 ```{r}
 # Doublon : Pour compter 1 médaille par pays/épreuve, on utilise distinct() sur les colonnes clés.
@@ -862,11 +862,6 @@ top_pays <- medal_data %>%
   summarise(Total_Medals = n()) %>%
   slice_max(Total_Medals, n = 15)
 
-```
-
-***Affichage du graphique***
-
-```{r}
 # Visualisation
 ggplot(top_pays, aes(x = reorder(NOC, Total_Medals), y = Total_Medals)) +
   geom_col(fill = "#002147", width = 0.7) +
@@ -893,11 +888,531 @@ ggplot(top_pays, aes(x = reorder(NOC, Total_Medals), y = Total_Medals)) +
 
 ***Analyse***
 
-L'observation du graphique confirme une **suprématie flagrante des États-Unis** (USA). Avec **plus de 2 500 médailles distinctes**, ils distancent massivement toutes les autres nations. Cette avance s'explique par leur **présence constante sur le podium depuis 1896** et leur **polyvalence dans les sports d'été et d'hiver**.
+L'observation du graphique confirme une **suprématie flagrante des États-Unis** (USA). Avec plus de 2 500 médailles distinctes, ils distancent massivement toutes les autres nations. Cette avance s'explique par leur présence constante sur le podium depuis 1896 et leur polyvalence dans les sports d'été et d'hiver.
 
-En deuxième position, nous retrouvons **l'Union Soviétique** (URS). Ce résultat est particulièrement remarquable car cette nation n'a **participé aux Jeux que pendant 40 ans** environ (1952-1988). Cela souligne l'incroyable **densité de performance du bloc soviétique** durant la **Guerre Froide.**
+En deuxième position, nous retrouvons **l'Union Soviétique** (URS). Ce résultat est particulièrement remarquable car cette nation n'a participé aux Jeux que pendant 40 ans environ (1952-1988). Cela souligne l'incroyable densité de performance du bloc soviétique durant la Guerre Froide.
 
-Le reste du classement montre un **peloton européen** groupé (Grande-Bretagne, France, Italie, Suède, Allemagne) qui bénéficie de **l'ancienneté de leur participation**. **La France** se situe dans le **haut du classement**, montrant une **régularité historique**.
+Le reste du classement montre un **peloton européen** groupé (Grande-Bretagne, France, Italie, Suède, Allemagne) qui bénéficie de l'ancienneté de leur participation. La France se situe dans le haut du classement, montrant une régularité historique.
+
+
+
+#### Parmis les pays les grosses nations, quelle est l'évolution dans le temps des medailles pour ces pays ?
+
+Le premier graphique offrait une vision globale et figée du succès olympique. Cependant, il masquait les dynamiques temporelles, les effondrements politiques, les boycotts et l'émergence de nouvelles forces.  Le but est de retracer les performances de 4 délégations majeures : les États-Unis (USA), la France (FRA), la Chine (CHN), ainsi que l'Union Soviétique (URS) et la Russie (RUS) que nous regroupons pour assurer la continuité de l'analyse historique.
+
+***Préparation des données***
+
+Pour construire ce graphique, nous filtrons notre base de données sur les cinq codes nations cibles. Nous utilisons la fonction `mutate()` combinée à un `if_else()` pour fusionner l'URSS et la Russie sous une même étiquette temporelle cohérente (`URSS / Russie`). Enfin, pour chaque année, nous calculons le nombre de médailles uniques obtenues afin de ne pas fausser les volumes à cause des sports collectifs.
+
+
+```{r}
+evol_pays <- athletes_full %>%
+  filter(!is.na(Medal)) %>%
+  distinct(NOC, Games, Year, Event, Medal) %>%
+  filter(NOC %in% c("USA", "URS", "RUS", "FRA", "CHN")) %>%
+  mutate(NOC_Group = if_else(NOC %in% c("URS", "RUS"), "URSS / Russie", NOC)) %>%
+  group_by(Year, NOC_Group) %>%
+  summarise(Total_Medals = n(), .groups = "drop")
+
+
+ggplot(evol_pays, aes(x = Year, y = Total_Medals, color = NOC_Group, group = NOC_Group)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.5) +
+  scale_color_manual(
+    values = c("USA" = "#002147", "URSS / Russie" = "#CC0000", "FRA" = "#0055A5", "CHN" = "#FFDE00"),
+    name = "Nation"
+  ) +
+  scale_x_continuous(breaks = seq(1896, 2016, by = 12)) +
+  labs(
+    title = "Trajectoires olympiques des superpuissances (1896 - 2016)",
+    subtitle = "Nombre de médailles distinctes par édition (Jeux d'été et d'hiver cumulés)",
+    x = "Année",
+    y = "Médailles remportées"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+
+```
+
+***Analyse***
+
+Le graphique met en lumiere 3 points principales :
+
+Le duel de la Guerre Froide (1952 - 1988) : Dès son entrée aux Jeux en 1952, la courbe rouge de l'URSS se hisse immédiatement au niveau des États-Unis. On observe l'affrontement idéologique matérialisé par les performances sportives. Les deux pics inversés de 1980 et 1984 illustrent parfaitement les boycotts croisés : les USA sont absents à Moscou en 1980 (chute de la courbe bleue), tandis que l'URSS boycotte Los Angeles en 1984 (chute de la courbe rouge).
+
+L'émergence fulgurante de la Chine : Absente des podiums durant la majeure partie du XXe siècle, la Chine (courbe jaune) participe à ses premiers jeux sous le nom de pays (chine) à partir de 1980.
+
+La régularité française : La France (courbe bleue claire) montre une trajectoire stable à travers le siècle. Mis à part le pic exceptionnel des Jeux de Paris en 1900, elle se maintient dans un peloton régulier, performant de manière continue sans variations géopolitiques extrêmes.
+
+
+
+#### Structure des podiums : Plutôt "tueurs de finales" ou abonnés aux places d'honneur ?
+
+Ce graphique change de perspective : on oublie le volume brut pour regarder le **caractère sportif** des nations. On cherche à savoir ce qui se passe quand un athlète monte sur le podium. Est-il programmé pour l'Or ou est-il un habitué des places d'honneur (Argent/Bronze) ? Trier les pays par leur pourcentage d'Or permet d'isoler la pure "culture de la gagne".
+
+***Préparation des données***
+
+Pour éviter de fausser les résultats avec les sports collectifs (où une seule victoire d'équipe génère 12 lignes d'Or), nous ne comptons qu'**une seule médaille par pays et par épreuve**. Nous calculons ensuite le ratio de médailles d'Or sur le total de chaque pays pour trier l'axe vertical du plus performant au plus modeste.
+
+```{r}
+# 1. Nettoyage des données et filtrage sur le Top 15 historique créé au graphique 1
+df_base_metal <- athletes_full %>%
+  filter(!is.na(Medal), NOC %in% top_pays$NOC) %>%
+  distinct(NOC, Games, Year, Event, Medal)
+
+# 2. Calcul du taux de médailles d'Or par nation pour pouvoir trier le graphique
+tri_or <- df_base_metal %>%
+  group_by(NOC) %>%
+  summarise(
+    Total_Medals = n(),
+    Gold_Medals = sum(Medal == "Gold"),
+    Prop_Or = Gold_Medals / Total_Medals,
+    .groups = "drop"
+  )
+
+# 3. Fusion et application des facteurs ordonnés pour les couleurs du graphique
+df_metal <- df_base_metal %>%
+  mutate(Medal = factor(Medal, levels = c("Bronze", "Silver", "Gold"))) %>%
+  left_join(tri_or, by = "NOC")
+
+
+ggplot(df_metal, aes(x = reorder(NOC, Prop_Or), fill = Medal)) +
+  
+  
+  geom_bar(position = "fill", width = 0.7) +
+  
+  scale_fill_manual(
+    values = c("Gold" = "#FFD700", "Silver" = "#C0C0C0", "Bronze" = "#CD7F32"), 
+    labels = c("Gold" = "Or", "Silver" = "Argent", "Bronze" = "Bronze")
+  ) +
+  
+  coord_flip() +
+  
+  # Transformation de l'axe de 0-1 vers des pourcentages (0% - 100%)
+  scale_y_continuous(labels = scales::percent_format()) +
+  
+  labs(
+    title = "Profil de performance : Répartition relative des métaux",
+    subtitle = "Nations triées par leur taux de conversion en médailles d'Or (Top 15 historique)",
+    x = "Nations (NOC)",
+    y = "Proportion au sein des podiums (en %)",
+    fill = "Métal"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold"), 
+    panel.grid.major.y = element_blank()
+  )
+
+```
+
+***Analyse***
+
+Bien que toutes ces nations partagent une forte régularité (les blocs se ressemblent car ce sont les 15 meilleurs pays de l'histoire), le tri par l'Or révèle des nuances stratégiques cruciales :
+
+L'illusion de la ressemblance : Tous ces pays ont des profils solides car pour entrer dans le Top 15 historique, il faut obligatoirement être performant sur les trois métaux. Les écarts semblent faibles visuellement (environ 10 à 14 % de différence entre le haut et le bas), mais à l'échelle olympique, chaque pourcentage d'Or supplémentaire représente des dizaines de finales basculant du bon côté.
+
+Le micro-écart qui change tout (Haut vs Bas) : La **Chine (CHN)**, les **USA** et l'**URSS** se détachent nettement au sommet : ils effleurent la barre des **40 % d'Or**. À ce niveau, la culture interne n'accepte que la victoire ; l'Argent y est presque invisible ou vécu comme un échec.
+
+À l'autre bout, le **Canada (CAN)** et l'**Australie (AUS)** descendent sous la barre des **30 % d'Or**. Leurs blocs gris (Argent) et marron (Bronze) sont beaucoup plus lourds. Ces pays ont un style "généraliste" : ils placent énormément d'athlètes sur les podiums, mais subissent une plus forte concurrence pour décrocher les titres suprêmes.
+
+
+
+###  Efficacité : La course au rendement (1996 vs 2016)
+
+#### Quels pays ont un rendment importants en 96 vs 2016 ?
+
+Envoyer beaucoup d'athlètes garantit-il plus de médailles ? On cherche ici à mesurer le "rendement" des délégations. Un pays peut envoyer 500 athlètes et revenir avec peu de podiums, tandis qu'un autre peut envoyer une petite élite ultra-efficace. En comparant 1996 et 2016, on veut voir si le sport de haut niveau s'est professionnalisé et si les nations gèrent mieux leur "rentabilité" d'athlètes.
+
+**La préparation des données :** Pour chaque édition (1996 et 2016), on procède au même nettoyage : 
+1. On compte les athlètes uniques via `n_distinct(ID)`.
+2. On filtre les médailles uniques par épreuve (`distinct(NOC, Event, Medal)`) pour ne pas tricher avec les sports collectifs.
+3. On calcule le **Ratio** (Médailles / Athlètes). Plus le point d'un pays est haut au-dessus de la ligne pointillée, plus sa délégation est efficace.
+
+```{r}
+# ==========================================
+# 1. PRÉPARATION ET GRAPHIC DE L'ÉDITION 1996
+# ==========================================
+
+athletes_96 <- athletes_full %>% 
+  filter(Year == 1996, Season == "Summer") %>%
+  group_by(NOC) %>% 
+  summarise(Taille_Delegation = n_distinct(ID), .groups = "drop")
+
+medailles_96 <- athletes_full %>% 
+  filter(Year == 1996, Season == "Summer", !is.na(Medal)) %>%
+  distinct(NOC, Event, Medal) %>% 
+  group_by(NOC) %>% 
+  summarise(Nb_Medailles = n(), .groups = "drop")
+
+df_1996 <- athletes_96 %>% 
+  left_join(medailles_96, by = "NOC") %>%
+  mutate(Nb_Medailles = replace_na(Nb_Medailles, 0), Ratio = Nb_Medailles / Taille_Delegation)
+
+ggplot(df_1996, aes(x = Taille_Delegation, y = Nb_Medailles)) +
+  geom_point(aes(size = Ratio), color = "#4682B4", alpha = 0.7) +
+  geom_smooth(method = "lm", color = "grey40", linetype = "dashed", se = FALSE) +
+  geom_text(
+    data = filter(df_1996, Taille_Delegation > 250 | Nb_Medailles > 15 | (Ratio > 0.15 & Nb_Medailles > 5)),
+    aes(label = NOC), vjust = -1, size = 3, fontface = "bold"
+  ) +
+  labs(
+    title = "Atlanta 1996 : L'ancien modèle olympique",
+    subtitle = "Rapport entre la taille de la délégation et les médailles obtenues",
+    x = "Nombre d'athlètes engagés",
+    y = "Nombre de médailles uniques",
+    size = "Ratio (Méd / Ath)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold"))
+
+
+
+```
+
+
+```{r}
+# ==========================================
+# 2. PRÉPARATION ET GRAPHIC DE L'ÉDITION 2016
+# ==========================================
+
+athletes_rio <- athletes_full %>% 
+  filter(Year == 2016, Season == "Summer") %>%
+  group_by(NOC) %>% 
+  summarise(Taille_Delegation = n_distinct(ID), .groups = "drop")
+
+medailles_rio <- athletes_full %>% 
+  filter(Year == 2016, Season == "Summer", !is.na(Medal)) %>%
+  distinct(NOC, Event, Medal) %>% 
+  group_by(NOC) %>% 
+  summarise(Nb_Medailles = n(), .groups = "drop")
+
+df_2016 <- athletes_rio %>% 
+  left_join(medailles_rio, by = "NOC") %>%
+  mutate(Nb_Medailles = replace_na(Nb_Medailles, 0), Ratio = Nb_Medailles / Taille_Delegation)
+
+ggplot(df_2016, aes(x = Taille_Delegation, y = Nb_Medailles)) +
+  geom_point(aes(size = Ratio), color = "#1D9E75", alpha = 0.7) +
+  geom_smooth(method = "lm", color = "grey40", linetype = "dashed", se = FALSE) +
+  geom_text(
+    data = filter(df_2016, Taille_Delegation > 250 | Nb_Medailles > 15 | (Ratio > 0.15 & Nb_Medailles > 5)),
+    aes(label = NOC), vjust = -1, size = 3, fontface = "bold"
+  ) +
+  labs(
+    title = "Rio 2016 : L'ère du rendement et de l'optimisation",
+    subtitle = "Rapport entre la taille de la délégation et les médailles obtenues",
+    x = "Nombre d'athlètes engagés",
+    y = "Nombre de médailles uniques",
+    size = "Ratio (Méd / Ath)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold"))
+
+```
+
+***Analyse***
+
+Selon les époques, la majeure partie des pays se trouve en corrélation avec la droite ayant alors un ratio d'efficacité moyen. Si on se focalise sur les grandes nations et leur évolution on peut voir que :
+
+Les grandes puissances dominent les deux époques, mais optimisent leur position. Les USA trônent tout en haut à droite en augmentant encore leur volume de médailles à Rio. La Chine (CHN) confirme sa trajectoire ascendante amorcée en 1996 en s'installant durablement très au-dessus de la ligne moyenne en 2016.
+
+L’Europe stagne proche de la droite d'efficacité ayant un ratio moyen parmi les grosses nations. La grande bretagne se positionne parmi les grosses nations alors que l'Allemagne, étant parmi les grosse nations en 96 revient dans le bloc Européen.
+
+
+
+#### Est-ce que ce sont forcément les plus grosses délégations qui tirent le meilleur rendement de leurs athlètes ?
+
+Ce graphique Boxplot analyse la distribution des ratios d'efficacité selon la taille des pays. En comparant 1996 et 2016 avec de nouvelles tranches ajustées, on cherche à voir si la taille d'une équipe est devenue un facteur prédictif de sa réussite.
+
+**La préparation des données :** 
+Pour chaque édition, nous reprenons les données de base de l'efficacité. Nous excluons les micro-délégations (5 athlètes ou moins) qui faussent les calculs (un athlète seul qui gagne une médaille donnerait un ratio de 100 %). Puis, nous classons les pays en 3 nouvelles catégories strictes : 
+* **Petite :** 6 à 50 athlètes.
+* **Moyenne :** 51 à 100 athlètes.
+* **Grande :** 101 athlètes et plus.
+
+```{r}
+# ==========================================
+# 1. DISTRIBUTION ET BOXPLOT POUR 1996
+# ==========================================
+
+df_boxplot_96 <- df_1996 %>%
+  filter(Taille_Delegation > 5) %>% 
+  mutate(Categorie_Taille = case_when(
+    Taille_Delegation <= 50  ~ "Petite (6-50)",
+    Taille_Delegation <= 100 ~ "Moyenne (51-100)",
+    TRUE                     ~ "Grande (>100)"
+  )) %>%
+  mutate(Categorie_Taille = factor(Categorie_Taille, levels = c("Petite (6-50)", "Moyenne (51-100)", "Grande (>100)")))
+
+ggplot(df_boxplot_96, aes(x = Categorie_Taille, y = Ratio, fill = Categorie_Taille)) +
+  geom_boxplot(alpha = 0.7, outlier.color = "red", width = 0.5) +
+  scale_fill_manual(values = c("Petite (6-50)" = "#AEC6CF", "Moyenne (51-100)" = "#4682B4", "Grande (>100)" = "#002147")) +
+  labs(
+    title = "Atlanta 1996 : Dispersion de l'efficacité par taille de délégation",
+    subtitle = "Comparaison des ratios (Médailles / Athlètes) selon les nouvelles tranches",
+    x = "Catégorie de taille de la délégation",
+    y = "Ratio d'efficacité",
+    fill = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold"), legend.position = "none")
+```
+```{r}
+# ==========================================
+# 2. DISTRIBUTION ET BOXPLOT POUR 2016
+# ==========================================
+
+df_boxplot_rio <- df_2016 %>%
+  filter(Taille_Delegation > 5) %>% 
+  mutate(Categorie_Taille = case_when(
+    Taille_Delegation <= 50  ~ "Petite (6-50)",
+    Taille_Delegation <= 100 ~ "Moyenne (51-100)",
+    TRUE                     ~ "Grande (>100)"
+  )) %>%
+  mutate(Categorie_Taille = factor(Categorie_Taille, levels = c("Petite (6-50)", "Moyenne (51-100)", "Grande (>100)")))
+
+ggplot(df_boxplot_rio, aes(x = Categorie_Taille, y = Ratio, fill = Categorie_Taille)) +
+  geom_boxplot(alpha = 0.7, outlier.color = "red", width = 0.5) +
+  scale_fill_manual(values = c("Petite (6-50)" = "#A3D9C9", "Moyenne (51-100)" = "#5CB8A6", "Grande (>100)" = "#007A64")) +
+  labs(
+    title = "Rio 2016 : Dispersion de l'efficacité par taille de délégation",
+    subtitle = "Comparaison des ratios (Médailles / Athlètes) selon les nouvelles tranches",
+    x = "Catégorie de taille de la délégation",
+    y = "Ratio d'efficacité",
+    fill = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold"), legend.position = "none")
+
+
+```
+***Analyse***
+
+La comparaison des structures de boîtes entre 1996 et 2016 valide parfaitement les dynamiques de performance sur ces tranches de taille :
+
+Les petites nations (6-50) : En 1996 comme en 2016, la boîte des petites délégations reste totalement écrasée en bas. La ligne noire centrale (la médiane) ne décolle pas de zéro. Cela montre qu'il n'y a pas de réelle amélioration globale pour ce groupe. Sans infrastructures massives, la grande majorité de ces pays repart des Jeux sans médaille, le rendement restant l'exception de quelques rares phénomènes individuels (les points rouges).
+
+Les grandes nations (>100) conservent le meilleur ratio : Ce groupe garde globalement l'avantage. Même si la ligne de leur médiane baisse légèrement, le haut de la boîte s'étire vers le haut en 2016. C'est le signe que l'élite mondiale des très grands pays optimise toujours plus sa rentabilité pour truster les podiums.
+
+Le sursaut des moyennes (51-100) qui rattrapent leur retard : C'est la surprise majeure de cette évolution. En 1996, la boîte des pays de taille moyenne était basse. En 2016, on observe un vrai bond en avant : le corps de la boîte monte de façon spectaculaire. Une partie importante des pays de taille moyenne a réussi à professionnaliser son approche pour venir rattraper la base du groupe des grandes nations. Mais la médianes restent en dessous des grandes nations.
+
+
+
+### Évolution de la spécialisation sportive (1996 vs 2016)
+
+#### Les grandes nations gagnent-elles leurs médailles de la même manière à 20 ans d'écart ?
+
+L'objectif de cette Heatmap est de comparer la signature sportive des mêmes grandes nations mondiales en 1996 et en 2016. On cherche à voir si les pays restent fidèles à leurs sports historiques ou s'ils ont opéré des virages stratégiques pour s'adapter à la concurrence.
+
+**La préparation des données :** Pour garantir une comparaison parfaite, nous fixons une liste commune de pays et de disciplines. Nous extrayons le **Top 15 global** des pays les plus médaillés sur l'ensemble des deux éditions. Nous trions également la liste des sports majeurs par ordre alphabétique. En figeant ces ordres (`levels`), les deux graphiques partagent une structure strictement identique.
+
+```{r}
+
+# 1. Isolation des médailles uniques pour les deux années cibles
+medailles_comparatives <- athletes_full %>% 
+  filter(Year %in% c(1996, 2016), Season == "Summer", !is.na(Medal)) %>% 
+  distinct(NOC, Year, Event, Medal, Sport)
+
+# 2. Détermination du Top 15 FIXE (trié par volume global sur les deux années)
+top15_fixes <- medailles_comparatives %>% 
+  count(NOC, sort = TRUE) %>% 
+  slice_head(n = 15) %>% 
+  pull(NOC)
+
+# 3. Calcul des pourcentages par sport pour chaque année
+df_specialisation_fixes <- medailles_comparatives %>% 
+  filter(NOC %in% top15_fixes) %>% 
+  count(Year, NOC, Sport) %>%
+  group_by(Year, NOC) %>% 
+  mutate(Pourcentage = (n / sum(n)) * 100) %>% 
+  ungroup()
+
+# 4. Sélection et fixation des sports majeurs par ordre alphabétique (> 8% max)
+sports_majeurs_fixes <- df_specialisation_fixes %>% 
+  group_by(Sport) %>% 
+  summarise(max_p = max(Pourcentage)) %>% 
+  filter(max_p > 8) %>% 
+  arrange(Sport) %>% 
+  pull(Sport)
+
+# Applique le filtrage final et force les ordres stricts (levels) pour les pays et les sports
+df_heatmap_final <- df_specialisation_fixes %>% 
+  filter(Sport %in% sports_majeurs_fixes) %>% 
+  mutate(
+    NOC = factor(NOC, levels = rev(top15_fixes)), # rev() pour avoir le premier pays tout en haut
+    Sport = factor(Sport, levels = sports_majeurs_fixes)
+  )
+
+# --- AFFICHAGE 
+
+# Graphique 1996
+ggplot(filter(df_heatmap_final, Year == 1996), aes(x = Sport, y = NOC, fill = Pourcentage)) +
+  geom_tile(color = "white", linewidth = 0.2) +
+  scale_fill_gradient(low = "#F4F5F9", high = "#4682B4", name = "% Médailles", limits = c(0, 45)) +
+  labs(
+    title = "Atlanta 1996 : Profils de spécialisation sportive",
+    subtitle = "Pourcentage des médailles venant de chaque discipline (Structure fixe)",
+    x = "Discipline sportive",
+    y = "Code Pays (NOC)"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+```
+
+```{r}
+# Graphique 2016
+ggplot(filter(df_heatmap_final, Year == 2016), aes(x = Sport, y = NOC, fill = Pourcentage)) +
+  geom_tile(color = "white", linewidth = 0.2) +
+  scale_fill_gradient(low = "#F4F5F9", high = "#1D9E75", name = "% Médailles", limits = c(0, 45)) +
+  labs(
+    title = "Rio 2016 : Profils de spécialisation sportive",
+    subtitle = "Pourcentage des médailles venant de chaque discipline (Structure fixe)",
+    x = "Discipline sportive",
+    y = "Code Pays (NOC)"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+```
+
+***Analyse***
+
+Le cas d'école de la Grande-Bretagne (GBR) : C’est la mutation la plus visible du graphique. En 1996, les médailles de la GBR provenaient principalement de l'Athlétisme (Athletics). En 2016, sa signature change radicalement : la case Cyclisme (Cycling) s'assombrit nettement, illustrant visuellement la stratégie politique du pays de concentrer ses ressources sur cette discipline ultra-rentable.
+
+La stabilité des géants (USA) : Les États-Unis (USA) maintiennent leur hégémonie sur deux piliers immuables : l'Athlétisme et la Natation (Swimming). En 2016, la case Natation gagne encore en intensité, confirmant leur mainmise sur les bassins.
+
+Le virage des Pays-Bas (NED) et de l'Australie (AUS) : L'Australie s'affirment en 2016 avec une spécialisation marquée et visible en Natation.
+Les Pays-Bas (NED) s'affirment en 2016 avec une spécialisation marquée et visible en Cyclisme.
+
+**En conclusion :** L'analyse des grilles montre qu'en 20 ans, le paysage olympique s'est rationalisé. Les nations qui n'ont pas la capacité des USA ou de la Chine pour briller partout ont deloppé des stratégies de niche très ciblées (comme la GBR et les NED en cyclisme) pour optimiser leur présence au tableau des médailles.
+
+
+
+### L'effet pays hôte : Dynamique et cycle de performance
+
+#### Organiser les Jeux Olympiques offre-t-il un avantage statistique mesurable ?
+
+Ce graphique étudie le cycle de performance de 6 pays hôtes successifs (de 1992 à 2012) sur trois temps distincts : l'édition précédente (T-1), l'édition à domicile (T), et l'édition suivante (T+1). L'utilisation de facettes avec des échelles libres (`free_y`) permet d'isoler la tendance propre à chaque pays, peu importe son volume initial de médailles.
+
+**La préparation des données :** 
+1. Un référentiel temporel associe chaque pays hôte à son triptyque d'années chronologiques.
+2. Les données de médailles sont nettoyées pour ne comptabiliser qu'**une seule médaille par épreuve** (neutralisation de l'effet d'équipe).
+3. Les phases sont ordonnées de manière stricte pour garantir la continuité visuelle de la courbe d'évolution.
+
+```{r }
+# 1. Référentiel de base
+
+ref_hosts_6 <- data.frame(
+  Nation = c(
+    "Espagne (1992)", "États-Unis (1996)", "Australie (2000)", 
+    "Grèce (2004)", "Chine (2008)", "Grande-Bretagne (2012)"
+  ),
+
+  NOC = c("ESP", "USA", "AUS", "GRE", "CHN", "GBR"),
+  Annee_Precedente = c(1988, 1992, 1996, 2000, 2004, 2008),
+  Annee_Hote       = c(1992, 1996, 2000, 2004, 2008, 2012),
+  Annee_Suivante   = c(1996, 2000, 2004, 2008, 2012, 2016)
+)
+
+
+# 2. Passage au format long
+
+df_host_long_6 <- ref_hosts_6 %>%
+  pivot_longer(
+    cols = c(Annee_Precedente, Annee_Hote, Annee_Suivante),
+    names_to = "Phase",
+    values_to = "Year"
+  ) %>%
+  mutate(Phase = case_when(
+    Phase == "Annee_Precedente" ~ "1. Avant (T-1)",
+    Phase == "Annee_Hote"       ~ "2. Hôte (T)",
+    Phase == "Annee_Suivante"   ~ "3. Après (T+1)"
+  ))
+
+
+# 3. Forcer l'ordre chronologique exact pour l'affichage des facettes
+
+df_host_long_6 <- df_host_long_6 %>%
+  mutate(Nation = factor(Nation, levels = c(
+    "Espagne (1992)", "États-Unis (1996)", "Australie (2000)", 
+    "Grèce (2004)", "Chine (2008)", "Grande-Bretagne (2012)"
+  )))
+
+
+# 4. Calcul des médailles distinctes par pays et par année (JO d'été uniquement)
+
+medals_per_year <- athletes_full %>%
+  filter(Season == "Summer", !is.na(Medal)) %>%
+  distinct(NOC, Year, Event, Medal) %>%
+  group_by(NOC, Year) %>%
+  summarise(Total_Medals = n(), .groups = "drop")
+
+
+# 5. Fusion finale
+
+df_slope_6 <- df_host_long_6 %>%
+  left_join(medals_per_year, by = c("NOC" = "NOC", "Year" = "Year")) %>%
+  mutate(Total_Medals = replace_na(Total_Medals, 0))
+
+
+
+ggplot(df_slope_6, aes(x = Phase, y = Total_Medals, group = Nation, color = Phase)) +
+  geom_line(color = "grey60", linewidth = 1.2) +
+  geom_point(size = 3.5) +
+  # Code couleur : Bleu (Avant), Vert (Pic Hôte), Orange (Après)
+
+  scale_color_manual(values = c("1. Avant (T-1)" = "#56B4E9", "2. Hôte (T)" = "#009E73", "3. Après (T+1)" = "#E69F00")) +
+
+
+
+  facet_wrap(~Nation, scales = "free_y", ncol = 3) +
+  labs(
+    title = "Validation chronologique de l'effet pays hôte",
+    subtitle = "Haut : Éditions 1992 à 2000 | Bas : Éditions 2004 à 2012",
+    x = NULL,
+    y = "Nombre de médailles uniques remportées",
+    color = "Étape du cycle"
+  ) +
+
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.text.x = element_text(angle = 15, hjust = 1),
+    panel.border = element_rect(color = "grey90", fill = NA),
+    strip.background = element_rect(fill = "#F4F5F9", color = "grey90"),
+    strip.text = element_text(face = "bold"),
+    legend.position = "bottom"
+
+  )
+
+``` 
+
+***Analyse***
+
+L’examen des trajectoires valide l'existence d'un cycle de performance olympique très régulier :
+
+Le pic systématique à domicile (T) : À l'exception des États-Unis, **5 pays sur 6** connaissent une explosion de leur compteur de médailles l’année où ils organisent les Jeux (Espagne, Australie, Grèce, Chine, Grande-Bretagne). Cet élan est le résultat direct de la mobilisation du public et d'investissements financiers massifs en amont.
+
+L'anomalie américaine (1996) : Les USA affichent une baisse continue. Cela s'explique par l'édition précédente (1992), où la désorganisation de l'ex-bloc soviétique leur avait exceptionnellement permis de sur-performer, rendant leur total historique de Barcelone impossible à réitérer à Atlanta.
+
+Le contrecoup inévitable (T+1) : Dès l'édition suivante, la rechute est presque générale. Elle est particulièrement brutale pour la **Grèce (2004)** qui s'effondre de 16 à 4 médailles, faute d'avoir su pérenniser ses structures sportives.
+
+L'exception britannique (2012) : La **Grande-Bretagne** réalise l'exploit unique de continuer à progresser à Rio en 2016 (T+1) par rapport à ses JO à domicile. C'est la preuve d'un modèle d'élite ultra-efficace qui a survécu à l'effet d'ambiance de Londres.
+
+**En conclusion :** Si l'avantage d'organiser les Jeux garantit presque à coup sûr un sommet de performance à domicile, la vraie différence réside dans l'après-Jeux : certaines nations subissent un krach immédiat (Grèce), tandis que d'autres transforment l'événement en un héritage durable (Grande-Bretagne).
+
 
 ## 4. Consultant en stratégie sportive du Comité International Olympique pour améliorer l'événement
 
