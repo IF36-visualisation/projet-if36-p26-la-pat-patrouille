@@ -19,22 +19,7 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem("Dashboard Efficacité", tabName = "dashboard", icon = icon("chart-bar")),
-      menuItem("Analyse par sport", tabName = "sports", icon = icon("running")),
-      
-      # Sélecteur des 6 dernières éditions
-      selectInput(
-        inputId = "input_year", 
-        label = "Édition des JO d'été :", 
-        choices = c(
-          "Rio 2016" = 2016,
-          "Londres 2012" = 2012,
-          "Pékin 2008" = 2008,
-          "Athènes 2004" = 2004,
-          "Sydney 2000" = 2000,
-          "Atlanta 1996" = 1996
-        ),
-        selected = 2016
-      )
+      menuItem("Analyse par sport", tabName = "sports", icon = icon("running"))
     )
   ),
   
@@ -121,6 +106,27 @@ ui <- dashboardPage(
         fluidRow(
           column(12, h2(uiOutput("dynamic_title")))
         ),
+
+        # choix des jo
+        fluidRow(
+          box(
+            title = "Sélection de l'édition",
+            status = "warning", solidHeader = TRUE, width = 12,
+            selectInput(
+              inputId = "input_year", 
+              label = "Édition des JO d'été :", 
+              choices = c(
+                "Rio 2016" = 2016,
+                "Londres 2012" = 2012,
+                "Pékin 2008" = 2008,
+                "Athènes 2004" = 2004,
+                "Sydney 2000" = 2000,
+                "Atlanta 1996" = 1996
+              ),
+              selected = 2016
+            )
+          )
+        ),        
         
         # Ligne 1 : Value Boxes
         fluidRow(
