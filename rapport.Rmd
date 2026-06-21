@@ -51,7 +51,11 @@ Ce dataset est décrit par 15 variables :
 
 ## Plan d’analyses
 
-1.  **Évolution historique et participation**
+Afin de produire une analyse riche de ce dataset, nous avons décidé de ne pas nous limiter à une analyse exploratoire linéaire en se concentrant sur un aspect du sujet. En effet, nous avons pris la décision de nous mettre dans la peau de quatre profils différents pour lesquels une analyse de ces données permettrait de développer les connaissances sur les Jeux Olympiques. 
+
+Chaque profil interrogera donc nos données avec ses propres objectifs : 
+
+1.  **L'observateur temporel : Mesure des avancées sociétales et de l'impact des secousses géopolitiques sur l'évenement**
 
 -   **Croissance globale :** Quelle est l'évolution du nombre d'athlètes et de nations (NOC) de 1896 à nos jours ?
     -   **Variables :** Year, ID (en comptant les valeurs uniques : n_distinct(ID)), NOC (n_distinct(NOC)).
@@ -69,7 +73,7 @@ Ce dataset est décrit par 15 variables :
     -   **Variables :** Year, NOC, ID (unique).
     -   **Graphique :** Boxplots par décennie, pour voir la dispersion de la taille des délégations.
 
-2.  **Morphologie et caractéristiques physiques des athlètes**
+2.  **Le recruteur : Recherche de liens entre profil physique et performance**
 
 -   **Profils types par sport :** Existe-t-il une distribution spécifique de la taille et du poids pour chaque discipline (ex: comparaison entre le Basket-ball et la Gymnastique) ?
     -   **Variables :** Height, Weight, Sport, Gender
@@ -86,7 +90,7 @@ Ce dataset est décrit par 15 variables :
     -   **Variables :** Création d'une variable BMI = Weight / (Height/100)\^2.
     -   **Graphique :** Ridgeline plot, via le package ggridges
 
-3.  **Analyse de la performance et des médailles**
+3.  **Bookmaker : Mesure de l’efficacité brute des nations pour prédire plus précisement**
 
 -   **Domination par nation :** Quels pays (NOC) possèdent le plus grand nombre de médailles cumulées ? Evolution des médaille pour les grosse d'élégations.
     -   **Variables :** NOC, Medal (filtré sans NA), Event, Year.
@@ -102,7 +106,7 @@ Ce dataset est décrit par 15 variables :
     -   **Variables :** NOC, Year, City, Medal. (Il faut un référentiel externe ou croiser City avec la nationalité de la ville).
     -   **Graphique :** Un Slope chart, pour comparer le nombre de médailles d'un pays à l'édition T-1 (avant d'accueillir), à l'édition T (pays hôte), et T+1 (après).
 
-4.  **Analyse des disciplines et des épreuves**
+4.  **Consultant en stratégie sportive du Comité International Olympique pour améliorer l'événement**
 
 -   **Diversité des sports :** Comment le nombre de disciplines (Sport) et d'épreuves (Event) a-t-il évolué ?
     -   **Variables :** Year, Sport (unique), Event (unique), Season.
@@ -137,7 +141,7 @@ athletes_events_part2 <- read_csv("./data/athletes_events-part2.csv")
 athletes_full <- bind_rows(athletes_events_part1, athletes_events_part2)
 ```
 
-## 1. Évolution historique et participation
+## 1. L'observateur temporel : Mesure des avancées sociétales et de l'impact des secousses géopolitiques sur l'évenement
 
 ### Croissance globale : Quelle est l'évolution du nombre d'athlètes et de nations (NOC) de 1896 à nos jours ?
 
@@ -661,7 +665,7 @@ L'édition de 1908 au Royaume-Uni illustre parfaitement cette dynamique de mani�
 
 ---
 
-## 2. Morphologie et caractéristiques physiques des athlètes
+## 2. Le recruteur : Recherche de liens entre profil physique et performance
 
 Afin d’explorer plus finement les différences morphologiques entre disciplines, nous avons utilisé une **interface interactive développée avec Shiny** permettant de sélectionner dynamiquement les sports à comparer.
 
@@ -832,7 +836,7 @@ Cette analyse montre cependant une limite importante : **l’IMC constitue un in
 
 ---
 
-## 3. Analyse de la performance et des médailles
+## 3. Bookmaker : Mesure de l’efficacité brute des nations pour prédire plus précisement
 
 ### Analyse du cumul des médailles par nation
 
@@ -895,7 +899,7 @@ En deuxième position, nous retrouvons **l'Union Soviétique** (URS). Ce résult
 
 Le reste du classement montre un **peloton européen** groupé (Grande-Bretagne, France, Italie, Suède, Allemagne) qui bénéficie de **l'ancienneté de leur participation**. **La France** se situe dans le **haut du classement**, montrant une **régularité historique**.
 
-## 4. Analyse des disciplines et des épreuves
+## 4. Consultant en stratégie sportive du Comité International Olympique pour améliorer l'événement
 
 Dans cette partie, nous adopterons la posture d'un **consultant en stratégie sportive**, engagé par le **Comité International Olympique (CIO)** dans le but d'auditer la santé, l'attractivité et la logistique du programme olympique. L'objectif : décider quels sports garder, lesquels supprimer, comment moderniser les Jeux (parité, audience) et comment gérer la logistique (trop d'épreuves = Jeux trop chers).
 
