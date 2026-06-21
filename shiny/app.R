@@ -7,8 +7,8 @@ library(tidyverse)
 library(plotly)
 
 # Chargement et fusion (Option 1)
-athletes_events_part1 <- read_csv("./data/athletes_events-part1.csv")
-athletes_events_part2 <- read_csv("./data/athletes_events-part2.csv")
+athletes_events_part1 <- read_csv("../data/athletes_events-part1.csv")
+athletes_events_part2 <- read_csv("../data/athletes_events-part2.csv")
 athletes_full <- bind_rows(athletes_events_part1, athletes_events_part2)
 
 # 2. INTERFACE UTILISATEUR (UI) -----------------------------------------------
