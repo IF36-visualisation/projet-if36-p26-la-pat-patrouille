@@ -701,7 +701,7 @@ Pour cette analyse :
 
 La distribution des âges a été représentée à l’aide de **boxplots**, permettant d’observer l’âge médian ainsi que la dispersion des performances.
 
-XXXX GRAPH AGE
+![](images/age.png)
 
 #### Analyse
 
@@ -734,7 +734,10 @@ Nous avons conservé uniquement :
 
 Afin d’éviter le chevauchement des observations, nous avons utilisé des **courbes de densité 2D**, qui mettent en évidence les zones où les athlètes sont les plus concentrés.
 
-XXXX GRAPHS TAILLE-POIDS
+![](images/taillepoids1.png)
+![](images/taillepoids2.png)
+
+
 #### Analyse
 
 Le graphique met en évidence des **profils morphologiques très différenciés selon les disciplines**.
@@ -774,7 +777,9 @@ Nous avons :
 
 Les tendances ont ensuite été représentées à l’aide de courbes lissées.
 
-XXX GRAPH TAILLE ET POIDS
+![](images/taille.png)
+![](images/poids.png)
+
 
 #### Analyse
 
@@ -820,7 +825,7 @@ Nous avons :
 * conservé uniquement les sports sélectionnés ;
 * représenté les distributions via un **Ridgeline plot**.
 
-XXXXXX GRAPH IMC
+![](images/IMC.png)
 
 #### Analyse
 
