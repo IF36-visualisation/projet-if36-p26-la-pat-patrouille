@@ -9,6 +9,17 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+
+#install.packages("tidyverse")
+#install.packages("dplyr")
+#install.packages("ggplot2")
+#install.packages("treemapify")
+#install.packages("ggrepel")
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+library(treemapify)
 ```
 
 # Introduction
@@ -129,11 +140,6 @@ Chaque profil interrogera donc nos données avec ses propres objectifs :
 
 
 ```{r}
-# Chargement des fichiers et concaténation dans un dataset :
-library(tidyverse)
-library(dplyr)
-library(ggplot2)
-
 # Fusion des deux fichiers
 athletes_events_part1 <- read_csv("./data/athletes_events-part1.csv")
 athletes_events_part2 <- read_csv("./data/athletes_events-part2.csv")
@@ -490,7 +496,6 @@ Pour répondre à cette question, l’objectif est de retrouver à la fois tous 
 Nous avons décidé de représenter l’atteinte de la parité par un **lollipop chart**, avec toutes les lignes de vie des sports ayant atteint la parité. Nous avons déterminé que la parité était atteinte lorsque le pourcentage de participation féminine se trouvait entre 45% et 55% lors d’une édition, la parité parfaite étant un peu trop précise à atteindre.
 
 ```{r}
-# 1. Calcul des proportions par genre et par édition
 df_sport_gender <- athletes_full %>%
   distinct(ID, Year, Sport, Gender) %>%
   count(Year, Sport, Gender) %>%
@@ -499,12 +504,10 @@ df_sport_gender <- athletes_full %>%
   filter(Gender == "F") %>%
   ungroup()
 
-# 2. Identification de la première année d'apparition de CHAQUE sport
 df_debut_sports <- athletes_full %>%
   group_by(Sport) %>%
   summarise(Annee_Debut = min(Year, na.rm = TRUE), .groups = "drop")
 
-# 3. Calcul de l'année de parité et jointure avec l'année de début
 df_parite_sports <- df_sport_gender %>%
   filter(prop_femmes >= 0.45, prop_femmes <= 0.55) %>%
   group_by(Sport) %>%
@@ -517,19 +520,13 @@ df_parite_sports <- df_sport_gender %>%
   ) %>%
   arrange(Annee_Parite)
 
-# 4. Création du graphique
 ggplot(df_parite_sports, aes(x = reorder(Sport, -Annee_Parite), y = Annee_Parite)) +
   # CHANGEMENT CLÉ : yend pointe maintenant vers Annee_Debut
   geom_segment(aes(xend = reorder(Sport, -Annee_Parite), yend = Annee_Debut), 
                color = "#1D9E75", linewidth = 0.6) +
   
-  # Point matérialisant l'année où la parité est atteinte
   geom_point(color = "#1D9E75", size = 3.5) +
-  
-  # Point optionnel pour matérialiser le début historique (très élégant visuellement)
   geom_point(aes(y = Annee_Debut), color = "grey60", size = 1.5, shape = 1) +
-  
-  # Ajustement du texte pour éviter qu'il ne chevauche les points
   geom_text(aes(label = Label_Attente), hjust = -0.15, vjust = 0.4, size = 2.8, color = "grey30") +
   
   coord_flip() +
@@ -571,7 +568,6 @@ Pour répondre à cette question, nous nous sommes concentrés sur le comporteme
 
 
 ```{r fig.width=16, fig.height=6}
-library(ggrepel)
 
 df_delegations <- athletes_full %>%
   group_by(Year, Season, NOC) %>%
@@ -1547,9 +1543,6 @@ En tant qu'auditeurs, notre second critère est logistique. Le CIO s'est engagé
 ***Préparer les données***
 
 ```{r}
-#install.packages("treemapify")
-library(treemapify)
-
 logistique_treemap <- athletes_full %>%
   filter(Year >= 2000, Season == "Summer") %>%
   group_by(Sport, Year) %>%
@@ -1710,3 +1703,25 @@ ggplot(timeline_data, aes(x = Year, y = reorder(Sport, desc(Sport)))) +
 ```
 IL y a trop de sports
 
+# Conclusion
+L'exploration de ce dataset nous a permis de transformer des données brutes, décrivant uniquement des participations d'athlètes, en connaissances sur divers aspects de l'événement. Nous avons donc pu apprendre de nombreuses informations, comme par exemple le fait que des profils de sportifs sont avantagés dans certains sports ou les fluctuations de volume de participants dans les sports.
+
++ajouter les difficultés éventuelles et des pistes pour étendre ou élargir le travail effectué (intégrer les derniers JO aux données pour vérifier si certains cap ont été atteints, croiser les données avec d'autres dataset : données socio-économiques, résultats d'autres compétitions)
+
+
+Flavien : Dans ce projet, j'ai aimé prendre du recul sur mes visualisations, et les modifier pour qu'ils répondent le plus possible à la question. Je pense que pour la première partie il aurait été intéressant d'intégrer davantage d'événements historiques, et de visualiser les impacts pour chaque pays, mais cela aurait pris beaucoup de temps d'exploration.
+
+Margot :
+
+Lubin :
+
+Florian :
+
+# Annexe
+Flavien : Partie 1, préparation de la présentation
+
+Margot : Partie 2, deuxième onglet de l'app shiny
+
+Lubin : Partie 3, premier onglet de l'app shiny
+
+Florian : Partie 4, PowerBI, modifications du livrable 1
