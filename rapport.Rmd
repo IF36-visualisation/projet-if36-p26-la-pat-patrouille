@@ -1587,7 +1587,6 @@ ggplot(logistique_treemap, aes(
     plot.title = element_text(face = "bold", size = 14),
     legend.position = "bottom"
   )
-ggsave("treemap.png", width = 10, height = 6, dpi = 320)
 
 ```
 
