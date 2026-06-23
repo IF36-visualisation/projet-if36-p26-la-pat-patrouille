@@ -1800,7 +1800,7 @@ Enfin, pour donner une dimension encore plus stratégique à ce projet, une exce
 
 **Flavien :** Dans ce projet, j'ai aimé prendre du recul sur mes visualisations, et les modifier pour qu'ils répondent le plus possible à la question. Je pense que pour la première partie il aurait été intéressant d'intégrer davantage d'événements historiques, et de visualiser les impacts pour chaque pays, mais cela aurait pris beaucoup de temps d'exploration.
 
-**Margot :**
+**Margot :** Ce projet m’a permis de me mettre dans une logique plus orientée utilisateur en cherchant à construire des visualisations qui facilitent réellement l’exploration et la comparaison des sports. Le développement de l’onglet d’analyse par sport sur Shiny m’a amenée à faire évoluer plusieurs graphiques pour les rendre plus interactifs et plus lisibles. Avec plus de temps, il aurait été intéressant d’ajouter davantage d’analyses selon le genre afin d’étudier plus finement les différences morphologiques entre athlètes.
 
 **Lubin :** Ce projet a été très intéressant dans la prise de décision sur quelle visualisation pouvait correspondre le mieux afin d'afficher l'information voulue, mais aussi dans le choix de sa pertinence : est-ce que cette visualisation est utile ? Est-ce qu'elle demande d'autres visuels complémentaires, comme une comparaison avec une autre année ? Pour aller plus loin, il aurait été intéressant d'ajouter une dimension géographique (cartographie interactive par continent) pour analyser visuellement si l'efficacité sportive se regroupe par régions du monde.
 
