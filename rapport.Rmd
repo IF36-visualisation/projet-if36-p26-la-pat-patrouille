@@ -227,6 +227,8 @@ ggplot(df_croissance, aes(x = Year)) +
 Sur ce graphique, notre vision pré-attentive est troublée car la fin de notre plage temporelle est marquée par une oscillation des courbes. Cela est dû au changement de déroulement des JO avant 1992, où les deux saisons de l’événement étaient regroupées dans la même année. On voit donc directement les **différences numériques de participation entre les deux saisons** : il y a à la fois moins d’athlètes participants et moins de nations participantes. Cette différence est notamment due au fait que les disciplines des JO d'été peuvent se pratiquer dans davantage de pays et nécessitent moins d'infrastructures que celles des JO d'hiver. Nous pouvons également observer un rapport nations/athlètes légèrement supérieur en hiver, ce qui signifie que les délégations font en moyenne participer moins d’athlètes en hiver qu’en été.
 
 Après avoir analysé ces oscillations, il serait préférable de regrouper les éditions hiver/été sur des périodes de 4 ans pour pouvoir analyser la dynamique globale de l’événement. Nous avons donc réalisé le graphique ci-dessous en prenant en compte ce nouveau critère.
+
+
 ```{r}
 df_croissance_brute <- athletes_full %>%
   group_by(Year) %>%
@@ -808,14 +810,12 @@ L’objectif est ici d’étudier si certaines disciplines présentent des regro
 
 L’IMC est calculé selon :
 
-[
-IMC=\frac{Poids}{(Taille/100)^2}
-]
+$$IMC=\frac{Poids}{(Taille/100)^2}$$
 
 Selon les recommandations médicales classiques :
 
 * **IMC < 18,5** : insuffisance pondérale ;
-* **18,5 ≤ IMC ≤ 24,9** : zone considérée comme normale ;
+* **18,5 $\leq$ IMC $\leq$ 24,9** : zone considérée comme normale ;
 * **IMC > 25** : surpoids.
 
 #### Préparation des données
@@ -1419,6 +1419,7 @@ L'exception britannique (2012) : La **Grande-Bretagne** réalise l'exploit uniqu
 
 **En conclusion :** Si l'avantage d'organiser les Jeux garantit presque à coup sûr un sommet de performance à domicile, la vraie différence réside dans l'après-Jeux : certaines nations subissent un krach immédiat (Grèce), tandis que d'autres transforment l'événement en un héritage durable (Grande-Bretagne).
 
+---
 
 ## 4. Consultant en stratégie sportive du Comité International Olympique pour améliorer l'événement
 
@@ -1428,9 +1429,8 @@ Dans cette partie, nous adopterons la posture d'un **consultant en stratégie sp
 
 Le but de cette partie est d'identifier les types de sports qui favorisent l'égalité de chances afin d'intégrer de nouveaux sports pouvant être gagnés par tous, et raviver la compétition.
 
-**Attention :** Nous avons choisi d'écarter les Jeux d'hiver de cette analyse car tous les pays n'ont pas forcément un climat leur permettant d'avoir accès à la neige ou à la glace, ce qui empêcherait d'office de nombreuses nations de participer et fausserait nos calculs sur l'universalité des sports.
+*Attention :* Nous avons choisi d'écarter les Jeux d'hiver de cette analyse car tous les pays n'ont pas forcément un climat leur permettant d'avoir accès à la neige ou à la glace, ce qui empêcherait d'office de nombreuses nations de participer et fausserait nos calculs sur l'universalité des sports.
 
-***Préparer les données***
 
 ```{r}
 universalite_globale <- athletes_full %>%
@@ -1448,9 +1448,9 @@ universalite_globale <- athletes_full %>%
 
 ```
 
-#### L'Idéal Olympique (Les sports très universels)
+**L'Idéal Olympique (Les sports très universels)**
 
-***Graph***
+Regardons quels sont les sports qui sont des exemples en termes t'équité.
 
 ```{r}
 data_universel <- tail(universalite_globale, 15)
@@ -1469,7 +1469,10 @@ ggplot(data_universel, aes(x = Ratio_Universalite, y = reorder(Sport, Ratio_Univ
 
 On retrouve globalement des sports qui nécessitent peu ou pas d'infrastructures coûteuses (pas de chevaux, pas de bateaux, pas de piscines olympiques). Ils permettent donc à des pays émergents de rivaliser à armes égales avec les grandes puissances mondiales.
 
-#### Les sports sous monopole
+
+**Les sports sous monopole**
+
+Regardons ensuite quels sont les sports qui sont les plus accaparés par certaines nations.
 
 ```{r}
 
@@ -1479,7 +1482,7 @@ ggplot(data_monopole, aes(x = Ratio_Universalite, y = reorder(Sport, desc(Ratio_
   geom_segment(aes(x = 0, xend = Ratio_Universalite, y = Sport, yend = Sport), color = "lightgray", linewidth = 1) +
   geom_point(color = "#D55E00", size = 4) + # Point rouge/orange
   labs(
-    title = "Audit CIO : Les Sports sous 'Monopole' (JO d'été 2000-2016)",
+    title = "Les Sports sous 'Monopole' (JO d'été 2000-2016)",
     subtitle = "Podiums confisqués par quelques nations",
     x = "Ratio (Nb Nations Médaillées / Nb d'Épreuves)", y = ""
   ) +
@@ -1489,11 +1492,9 @@ ggplot(data_monopole, aes(x = Ratio_Universalite, y = reorder(Sport, desc(Ratio_
 
 Ce monopole a généralement deux causes : - Une cause économique, comme pour l'Équitation (Equestrianism) ou la Voile (Sailing), qui exigent des financements massifs monopolisés par l'Europe et l'Amérique du Nord. - Cause de politique sportive d'État, comme la Chine qui exerce une domination totale sur le Tennis de Table et le Plongeon, ne laissant que des miettes au reste du monde.
 
+**Le choc**
+
 Pour mieux comprendre comment ce manque d'universalité se manifeste, nous avons confronté deux modèles opposés : la Natation (discipline bien en place), face à un sport récemment intégrée (le Rugby à 7).
-
-#### Le choc
-
-***Datas***
 
 ```{r}
 df_medals <- athletes_full %>%
@@ -1537,7 +1538,7 @@ ggplot(data_rugby, aes(x = reorder(NOC, -n), y = n, fill = NOC)) +
 
 Analyse : Les 6 seules médailles disponibles ont été gagnées par 6 pays différents. Mieux encore, ce sport a permis aux Îles Fidji de gagner la toute première médaille d'or de leur histoire ! Avec un minimum d'épreuves, ce sport a apporté instantanément une immense diversité au tableau des médailles.
 
-#### Conclusion
+**Conclusion**
 
 Si l'objectif est d'avoir des Jeux vraiment mondialisés, il est beaucoup plus stratégique d'ajouter des sports d'équipe à format court (comme le Rugby à 7 ou le Basket 3x3) plutôt que de rajouter sans cesse de nouvelles distances en Natation, qui finiront inévitablement dans la poche des mêmes grandes nations.
 
@@ -1545,7 +1546,6 @@ Si l'objectif est d'avoir des Jeux vraiment mondialisés, il est beaucoup plus s
 
 En tant qu'auditeurs, notre second critère est logistique. Le CIO s'est engagé à limiter la taille du village olympique pour réduire le coût des Jeux. Nous devons donc évaluer le "rendement" de chaque sport : combien d'athlètes une discipline amène-t-elle à chaque édition par rapport au nombre de podiums qu'elle organise ?
 
-***Préparer les données***
 
 ```{r}
 logistique_treemap <- athletes_full %>%
@@ -1593,11 +1593,11 @@ ggsave("treemap.png", width = 10, height = 6, dpi = 320)
 
 On repère 3 cas de figures :
 
--   les "Volumineux mais rentables" : Ils consomment énormément de lits, mais cet encombrement est totalement justifié par la production massive de médailles (ex: Natation, Athlétisme).
+- les "Volumineux mais rentables" : Ils consomment énormément de lits, mais cet encombrement est totalement justifié par la production massive de médailles (ex: Natation, Athlétisme).
 
--   les "Discrets et très performants" : Ultra-Rentables, ils nécessitent très peu d'athlètes tout en distribuant un grand nombre de médailles. C'est le format idéal pour le CIO (ex: Lutte, Judo).
+- les "Discrets et très performants" : Ultra-Rentables, ils nécessitent très peu d'athlètes tout en distribuant un grand nombre de médailles. C'est le format idéal pour le CIO (ex: Lutte, Judo).
 
--   les sports co : Volumineux et non rentables. Ils occupent beaucoup d'espace, mais leur rendement sportif est catastrophique en mobilisant des centaines d'athlètes pour un seul podium (ex: Football, Basketball).
+- les sports co : Volumineux et non rentables. Ils occupent beaucoup d'espace, mais leur rendement sportif est catastrophique en mobilisant des centaines d'athlètes pour un seul podium (ex: Football, Basketball).
 
 Pour autant, il persiste une faille importante dans ce diagnostic purement logistique : l'absence de la dimension économique et médiatique (droits TV, billetterie, sponsoring). En effet, si l'on s'arrêtait à cette simple équation "Lits / Médailles", le CIO devrait immédiatement rayer le Football ou le Basketball de son programme. Or, dans la réalité, ce "gouffre" en hébergement est largement compensé par les audiences mondiales et les revenus financiers colossaux qu'ils génèrent. À l'inverse, les sports ultra-rentables logistiquement (comme l'Haltérophilie) sont souvent ceux qui attirent le moins de spectateurs. L'analyse montre donc ici ses limites : le maintien d'un sport aux Jeux Olympiques ne repose pas que sur sa rentabilité sportive, mais sur un compromis indispensable avec sa rentabilité financière.
 
@@ -1607,7 +1607,6 @@ D'autre part, on remarque qu'on arrive à une conclusion qui contredit celle du 
 
 L'un des chantiers les plus vitaux pour la survie et la pertinence du mouvement olympique est sa modernisation sociétale, et notamment la parité. En tant qu'auditeurs, nous ne devons pas seulement regarder le nombre d'athlètes femmes (ce qui a été traité en partie 1), mais auditer l'"offre" du CIO : le programme des épreuves s'est-il équilibré ?
 
-**Préparer les données**
 
 ```{r}
 epreuves_genre <- athletes_full %>%
@@ -1633,7 +1632,6 @@ donnees_parite <- epreuves_genre %>%
 
 ```
 
-**Graph**
 
 ```{r}
 ggplot(donnees_parite, aes(x = Year, y = Valeur_Graphique, fill = Type_Epreuve)) +
@@ -1650,7 +1648,7 @@ ggplot(donnees_parite, aes(x = Year, y = Valeur_Graphique, fill = Type_Epreuve))
   scale_y_continuous(labels = abs) +
   
   labs(
-    title = "Audit CIO : La route vers la parité du programme",
+    title = "La route vers la parité du programme",
     subtitle = "Évolution de l'offre sportive (Jeux d'été 1896-2016)",
     x = "Année",
     y = "Nombre d'épreuves au programme",
@@ -1673,7 +1671,6 @@ Le graphique en "pyramide inversée" illustre l'évolution de l'offre sportive d
 
 ### Audit de la Pérennité : Héritage vs "Cimetière Olympique"
 
-**Traitement des données**
 
 ```{r}
 timeline_data <- athletes_full %>%
@@ -1684,10 +1681,10 @@ timeline_data <- athletes_full %>%
 
 ```
 
-**Graph**
+On part du principe que si un athlète a participé à l'épreuve, c'est que cette dernière était au programme. Regardons à l'aide d'un diagramme de Gantt la pérennité des différents sports.
 
 ```{r}
-# 2. Création du graphique (Frise / Gantt)
+# Création du graphique (Frise / Gantt)
 ggplot(timeline_data, aes(x = Year, y = reorder(Sport, desc(Sport)))) +
   # shape = 15 permet d'avoir des carrés pour créer une ligne continue
   geom_point(color = "#0072B2", shape = 15, size = 1.5) +
@@ -1709,7 +1706,7 @@ ggplot(timeline_data, aes(x = Year, y = reorder(Sport, desc(Sport)))) +
 
 ```
 
-<<<<<<< HEAD
+
 Le graph manque de clarté : les lignes discontinues atténuent la lisibilité du diagramme de Gant. De plus, tous les sports sont ici condensés : comme il s'agit d'une liste, augmentons la hauteur du graph.
 
 ```{r fig.height=12, fig.width=8}
@@ -1783,11 +1780,15 @@ Le constat est flagrant : non seulement le CIO empile de nouveaux sports vers le
 
 Pour illustrer la dynamique concurrentielle entre les disciplines, nous avons fait le choix de compléter notre approche analytique par un outil interactif de visualisation : Power BI. Là où le graphique précédent cartographie l'empreinte historique des sports de manière statique via l'épaisseur de ses traits, le graphique en barres animé présent dans notre tableau de bord restitue la véritable "course au gigantisme" ; nous vous invitons donc vivement à ouvrir le fichier joint pour expérimenter cette animation et observer en temps réel quels sports en ont dépassé ou cannibalisé d'autres décennie par décennie.
 
-***Conclusion*** En conclusion, notre analyse montre que le CIO doit trouver le bon équilibre entre son héritage historique et les attentes d'aujourd'hui. Face aux limites logistiques et financières des Jeux, il est devenu indispensable de rationaliser l'événement et d'optimiser la place de chaque discipline.
+***Pour conclure cette partie*** 
+
+En conclusion, notre analyse montre que le CIO doit trouver le bon équilibre entre son héritage historique et les attentes d'aujourd'hui. Face aux limites logistiques et financières des Jeux, il est devenu indispensable de rationaliser l'événement et d'optimiser la place de chaque discipline.
 
 Cependant, faire des économies ne suffit pas : il faut aussi savoir se réinventer. L'intégration de nouveaux sports ciblés et l'engagement fort vers la parité sont essentiels pour continuer à attirer le public. Dans ce contexte, la data n'est plus seulement là pour dresser des bilans : c'est un véritable outil de pilotage qui permet au CIO de prendre les bonnes décisions pour l'avenir des Jeux Olympiques.
 
+
 # Conclusion
+
 L'exploration de ce dataset nous a permis de transformer des données brutes, décrivant uniquement des participations d'athlètes, en connaissances sur divers aspects de l'événement. Nous avons donc pu apprendre de nombreuses informations, comme par exemple le fait que des profils de sportifs sont avantagés dans certains sports ou les fluctuations de volume de participants dans les sports.
 
 Bien sûr, ce travail d'analyse s'est parfois accompagné de quelques défis techniques, notamment lorsqu'il a fallu nettoyer, restructurer la donnée ou contourner les limites de certains outils pour obtenir les visualisations interactives souhaitées.
@@ -1797,19 +1798,19 @@ Ces étapes nous ont cependant donné de nombreuses idées pour aller plus loin 
 Enfin, pour donner une dimension encore plus stratégique à ce projet, une excellente piste serait de croiser nos informations avec d'autres jeux de données. Intégrer des indicateurs socio-économiques (comme le PIB, la démographie ou les investissements publics de chaque nation) ou ajouter les résultats d'autres compétitions internationales majeures permettrait de comprendre encore plus finement les véritables moteurs de la performance sportive à l'échelle mondiale.
 
 
-Flavien : Dans ce projet, j'ai aimé prendre du recul sur mes visualisations, et les modifier pour qu'ils répondent le plus possible à la question. Je pense que pour la première partie il aurait été intéressant d'intégrer davantage d'événements historiques, et de visualiser les impacts pour chaque pays, mais cela aurait pris beaucoup de temps d'exploration.
+**Flavien :** Dans ce projet, j'ai aimé prendre du recul sur mes visualisations, et les modifier pour qu'ils répondent le plus possible à la question. Je pense que pour la première partie il aurait été intéressant d'intégrer davantage d'événements historiques, et de visualiser les impacts pour chaque pays, mais cela aurait pris beaucoup de temps d'exploration.
 
-Margot :
+**Margot :**
 
-Lubin :
+**Lubin :**
 
-Florian : Ce projet a été une excellente opportunité pour découvrir la datavisualisation tout en approfondissant mes connaissances sur les Jeux Olympiques.  Il aurait été intéressant, avec d'avantage de temps, de croiser notre dataset avec d'avantages d'informations, tel que les budgets exacts de chaque édition pour pousser encore plus loin notre analyse financière.
+**Florian :** Ce projet a été une excellente opportunité pour découvrir la datavisualisation tout en approfondissant mes connaissances sur les Jeux Olympiques.  Il aurait été intéressant, avec d'avantage de temps, de croiser notre dataset avec d'avantages d'informations, tel que les budgets exacts de chaque édition pour pousser encore plus loin notre analyse financière.
 
 # Annexe
-Flavien : Partie 1, préparation de la présentation
+**Flavien :** Partie 1, préparation de la présentation
 
-Margot : Partie 2, deuxième onglet de l'app shiny
+**Margot :** Partie 2, deuxième onglet de l'app shiny
 
-Lubin : Partie 3, premier onglet de l'app shiny
+**Lubin :** Partie 3, premier onglet de l'app shiny
 
-Florian : Partie 4, PowerBI, modifications du livrable 1
+**Florian :** Partie 4, PowerBI, modifications du livrable 1
