@@ -1802,7 +1802,7 @@ Enfin, pour donner une dimension encore plus stratégique à ce projet, une exce
 
 **Margot :**
 
-**Lubin :**
+**Lubin :** Ce projet a été très intéressant dans la prise de décision sur quelle visualisation pouvait correspondre le mieux afin d'afficher l'information voulue, mais aussi dans le choix de sa pertinence : est-ce que cette visualisation est utile ? Est-ce qu'elle demande d'autres visuels complémentaires, comme une comparaison avec une autre année ? Pour aller plus loin, il aurait été intéressant d'ajouter une dimension géographique (cartographie interactive par continent) pour analyser visuellement si l'efficacité sportive se regroupe par régions du monde.
 
 **Florian :** Ce projet a été une excellente opportunité pour découvrir la datavisualisation tout en approfondissant mes connaissances sur les Jeux Olympiques.  Il aurait été intéressant, avec d'avantage de temps, de croiser notre dataset avec d'avantages d'informations, tel que les budgets exacts de chaque édition pour pousser encore plus loin notre analyse financière.
 
