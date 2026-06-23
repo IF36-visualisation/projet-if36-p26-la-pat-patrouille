@@ -1456,10 +1456,10 @@ universalite_globale <- athletes_full %>%
 data_universel <- tail(universalite_globale, 15)
 
 ggplot(data_universel, aes(x = Ratio_Universalite, y = reorder(Sport, Ratio_Universalite))) +
-  geom_segment(aes(x = 0, xend = Ratio_Universalite, y = Sport, yend = Sport), color = "lightgray", size = 1) +
+  geom_segment(aes(x = 0, xend = Ratio_Universalite, y = Sport, yend = Sport), color = "lightgray", linewidth = 1) +
   geom_point(color = "#0072B2", size = 4) + # Point bleu
   labs(
-    title = "Audit CIO : Universalité des Sports (JO d'été 2000-2016)",
+    title = "Universalité des Sports (JO d'été 2000-2016)",
     subtitle = "Sports distribuant des médailles à une grande diversité de nations",
     x = "Ratio (Nb Nations Médaillées / Nb d'Épreuves)", y = ""
   ) +
@@ -1476,7 +1476,7 @@ On retrouve globalement des sports qui nécessitent peu ou pas d'infrastructures
 data_monopole <- head(universalite_globale, 15)
 
 ggplot(data_monopole, aes(x = Ratio_Universalite, y = reorder(Sport, desc(Ratio_Universalite)))) +
-  geom_segment(aes(x = 0, xend = Ratio_Universalite, y = Sport, yend = Sport), color = "lightgray", size = 1) +
+  geom_segment(aes(x = 0, xend = Ratio_Universalite, y = Sport, yend = Sport), color = "lightgray", linewidth = 1) +
   geom_point(color = "#D55E00", size = 4) + # Point rouge/orange
   labs(
     title = "Audit CIO : Les Sports sous 'Monopole' (JO d'été 2000-2016)",
@@ -1579,7 +1579,7 @@ ggplot(logistique_treemap, aes(
   scale_fill_gradient(low = "#0072B2", high = "#D55E00", name = "Ratio : Athlètes par Podium") +
   
   labs(
-    title = "Audit CIO : Répartition spatiale du Village Olympique (2000-2016)",
+    title = "Répartition spatiale du Village Olympique (2000-2016)",
     subtitle = "Surface = Coût logistique (Lits)  |  Couleur = Rendement (Rouge = Anomalie)"
   ) +
   theme_minimal() +
@@ -1587,19 +1587,21 @@ ggplot(logistique_treemap, aes(
     plot.title = element_text(face = "bold", size = 14),
     legend.position = "bottom"
   )
+ggsave("treemap.png", width = 10, height = 6, dpi = 320)
+
 ```
 
 On repère 3 cas de figures :
 
 -   les "Volumineux mais rentables" : Ils consomment énormément de lits, mais cet encombrement est totalement justifié par la production massive de médailles (ex: Natation, Athlétisme).
 
-<!-- -->
-
 -   les "Discrets et très performants" : Ultra-Rentables, ils nécessitent très peu d'athlètes tout en distribuant un grand nombre de médailles. C'est le format idéal pour le CIO (ex: Lutte, Judo).
 
 -   les sports co : Volumineux et non rentables. Ils occupent beaucoup d'espace, mais leur rendement sportif est catastrophique en mobilisant des centaines d'athlètes pour un seul podium (ex: Football, Basketball).
 
 Pour autant, il persiste une faille importante dans ce diagnostic purement logistique : l'absence de la dimension économique et médiatique (droits TV, billetterie, sponsoring). En effet, si l'on s'arrêtait à cette simple équation "Lits / Médailles", le CIO devrait immédiatement rayer le Football ou le Basketball de son programme. Or, dans la réalité, ce "gouffre" en hébergement est largement compensé par les audiences mondiales et les revenus financiers colossaux qu'ils génèrent. À l'inverse, les sports ultra-rentables logistiquement (comme l'Haltérophilie) sont souvent ceux qui attirent le moins de spectateurs. L'analyse montre donc ici ses limites : le maintien d'un sport aux Jeux Olympiques ne repose pas que sur sa rentabilité sportive, mais sur un compromis indispensable avec sa rentabilité financière.
+
+D'autre part, on remarque qu'on arrive à une conclusion qui contredit celle du point précédent : Les sports collectifs sont certes couteux, mais ce sont aussi eux qui offrent le plus d'égalité des chances.
 
 ### Audit de la Modernisation : Vers la Parité des Épreuves
 
@@ -1623,11 +1625,10 @@ epreuves_genre <- athletes_full %>%
     Premier_Genre == "F" ~ "Femmes"
   ))
 
-# 2. Compter le nombre d'épreuves par an
+# Compter le nombre d'épreuves par an
 donnees_parite <- epreuves_genre %>%
   group_by(Year, Type_Epreuve) %>%
   summarise(Nombre = n(), .groups = "drop") %>%
-  # ASTUCE : On passe le nombre en négatif pour les hommes pour faire la pyramide
   mutate(Valeur_Graphique = ifelse(Type_Epreuve == "Hommes", -Nombre, Nombre))
 
 ```
@@ -1670,10 +1671,10 @@ Le graphique en "pyramide inversée" illustre l'évolution de l'offre sportive d
 
 -   Le "Hack" des **épreuves Mixtes** (L'innovation) : L'apparition récente des épreuves mixtes (relais, judo par équipe) est la solution stratégique parfaite. Elle garantit la parité absolue sur le podium, sans avoir besoin d'augmenter le nombre de lits au village olympique.
 
-
 ### Audit de la Pérennité : Héritage vs "Cimetière Olympique"
 
 **Traitement des données**
+
 ```{r}
 timeline_data <- athletes_full %>%
   filter(Season == "Summer") %>%
@@ -1684,6 +1685,7 @@ timeline_data <- athletes_full %>%
 ```
 
 **Graph**
+
 ```{r}
 # 2. Création du graphique (Frise / Gantt)
 ggplot(timeline_data, aes(x = Year, y = reorder(Sport, desc(Sport)))) +
@@ -1694,7 +1696,7 @@ ggplot(timeline_data, aes(x = Year, y = reorder(Sport, desc(Sport)))) +
   geom_vline(xintercept = c(1916, 1940, 1944), linetype = "dashed", color = "red", alpha = 0.5) +
   
   labs(
-    title = "Audit CIO : Le 'Cimetière' et l'Héritage Olympique",
+    title = "Le 'Cimetière' et l'Héritage Olympique",
     subtitle = "Présence des disciplines aux Jeux d'été (1896-2016)",
     x = "Année", y = ""
   ) +
@@ -1706,12 +1708,93 @@ ggplot(timeline_data, aes(x = Year, y = reorder(Sport, desc(Sport)))) +
   )
 
 ```
-IL y a trop de sports
+
+<<<<<<< HEAD
+Le graph manque de clarté : les lignes discontinues atténuent la lisibilité du diagramme de Gant. De plus, tous les sports sont ici condensés : comme il s'agit d'une liste, augmentons la hauteur du graph.
+
+```{r fig.height=12, fig.width=8}
+ggplot(timeline_data, aes(x = Year, y = reorder(Sport, desc(Sport)))) +
+  
+  # LA SOLUTION EST ICI : geom_tile remplace geom_point
+  # width = 4 relie parfaitement les éditions. height = 0.6 contrôle l'épaisseur de la barre
+  geom_tile(aes(width = 4, height = 0.6), fill = "#0072B2") +
+  
+  # Repères historiques
+  geom_vline(xintercept = c(1916, 1940, 1944), linetype = "dashed", color = "red", alpha = 0.5) +
+  
+  labs(
+    title = "Le 'Cimetière' et l'Héritage Olympique",
+    subtitle = "Présence des disciplines aux Jeux d'été (1896-2016)",
+    x = "Année", y = ""
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    # J'ai légèrement remonté la taille du texte à 8.5 pour que ce soit plus lisible
+    axis.text.y = element_text(size = 8.5), 
+    panel.grid.minor = element_blank()
+  )
+
+
+```
+
+Cela pourrait être également intéressant de confronter l'apparition des épreuves ainsi que leur nombre de médailles : un sport qui distribue 2 médailles est plus enclin à disparaitre qu'un sport qui en distribue 20.
+
+```{r fig.height=12, fig.width=8}
+data_soundwave <- athletes_full %>%
+  filter(Season == "Summer") %>%
+  group_by(Sport, Year) %>%
+  summarise(Nb_Epreuves = n_distinct(Event), .groups = 'drop') %>%
+  
+  group_by(Sport) %>%
+  mutate(Annee_Apparition = min(Year)) %>%
+  ungroup() %>%
+  
+  # LA CORRECTION EST ICI : 
+  # On donne 0.15 d'épaisseur de base obligatoire, plus un bonus proportionnel (max 0.75)
+  mutate(Hauteur_Norm = 0.1 + (Nb_Epreuves / max(Nb_Epreuves)) * 0.75)
+
+# CRÉATION DU GRAPHIQUE
+
+ggplot(data_soundwave, aes(x = Year, y = reorder(Sport, desc(Annee_Apparition)))) +
+  
+  # La Tuile : La largeur est fixe (4 ans), mais la HAUTEUR varie selon nos données !
+  geom_tile(aes(width = 4, height = Hauteur_Norm), fill = "#0072B2") +
+  
+  # Repères historiques
+  geom_vline(xintercept = c(1916, 1940, 1944), linetype = "dashed", color = "red", alpha = 0.5) +
+  
+  labs(
+    title = "L'Inflation du Programme Olympique",
+    subtitle = "Tri par date d'apparition. L'épaisseur indique le nombre d'épreuves (Podiums).",
+    x = "Année", y = ""
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.text.y = element_text(size = 8),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_line(color = "lightgray", linetype = "dotted") # Aide à lire les lignes fines
+  )
+
+```
+
+Le constat est flagrant : non seulement le CIO empile de nouveaux sports vers le bas du graphique (la modernité), mais surtout, les "Piliers" situés en haut du graphique s'épaississent avec le temps ! Regardez la ligne de la Natation ou de la Gymnastique : elles gonflent comme des ondes sonores au fil des décennies. Le problème du CIO aujourd'hui n'est pas seulement le nombre de sports, c'est l'inflation des épreuves à l'intérieur même des disciplines historiques.
+
+Pour illustrer la dynamique concurrentielle entre les disciplines, nous avons fait le choix de compléter notre approche analytique par un outil interactif de visualisation : Power BI. Là où le graphique précédent cartographie l'empreinte historique des sports de manière statique via l'épaisseur de ses traits, le graphique en barres animé présent dans notre tableau de bord restitue la véritable "course au gigantisme" ; nous vous invitons donc vivement à ouvrir le fichier joint pour expérimenter cette animation et observer en temps réel quels sports en ont dépassé ou cannibalisé d'autres décennie par décennie.
+
+***Conclusion*** En conclusion, notre analyse montre que le CIO doit trouver le bon équilibre entre son héritage historique et les attentes d'aujourd'hui. Face aux limites logistiques et financières des Jeux, il est devenu indispensable de rationaliser l'événement et d'optimiser la place de chaque discipline.
+
+Cependant, faire des économies ne suffit pas : il faut aussi savoir se réinventer. L'intégration de nouveaux sports ciblés et l'engagement fort vers la parité sont essentiels pour continuer à attirer le public. Dans ce contexte, la data n'est plus seulement là pour dresser des bilans : c'est un véritable outil de pilotage qui permet au CIO de prendre les bonnes décisions pour l'avenir des Jeux Olympiques.
 
 # Conclusion
 L'exploration de ce dataset nous a permis de transformer des données brutes, décrivant uniquement des participations d'athlètes, en connaissances sur divers aspects de l'événement. Nous avons donc pu apprendre de nombreuses informations, comme par exemple le fait que des profils de sportifs sont avantagés dans certains sports ou les fluctuations de volume de participants dans les sports.
 
-+ajouter les difficultés éventuelles et des pistes pour étendre ou élargir le travail effectué (intégrer les derniers JO aux données pour vérifier si certains cap ont été atteints, croiser les données avec d'autres dataset : données socio-économiques, résultats d'autres compétitions)
+Bien sûr, ce travail d'analyse s'est parfois accompagné de quelques défis techniques, notamment lorsqu'il a fallu nettoyer, restructurer la donnée ou contourner les limites de certains outils pour obtenir les visualisations interactives souhaitées.
+
+Ces étapes nous ont cependant donné de nombreuses idées pour aller plus loin et élargir la portée de notre étude. Dans un premier temps, il serait très pertinent d'actualiser notre jeu de données avec les résultats des éditions les plus récentes (notamment Tokyo 2020 et Paris 2024). Cela permettrait de confronter nos analyses à l'actualité et de vérifier si les objectifs fixés par le CIO (comme le plafond strict du nombre d'athlètes ou l'atteinte totale de la parité) ont bien été franchis.
+
+Enfin, pour donner une dimension encore plus stratégique à ce projet, une excellente piste serait de croiser nos informations avec d'autres jeux de données. Intégrer des indicateurs socio-économiques (comme le PIB, la démographie ou les investissements publics de chaque nation) ou ajouter les résultats d'autres compétitions internationales majeures permettrait de comprendre encore plus finement les véritables moteurs de la performance sportive à l'échelle mondiale.
 
 
 Flavien : Dans ce projet, j'ai aimé prendre du recul sur mes visualisations, et les modifier pour qu'ils répondent le plus possible à la question. Je pense que pour la première partie il aurait été intéressant d'intégrer davantage d'événements historiques, et de visualiser les impacts pour chaque pays, mais cela aurait pris beaucoup de temps d'exploration.
@@ -1720,7 +1803,7 @@ Margot :
 
 Lubin :
 
-Florian :
+Florian : Ce projet a été une excellente opportunité pour découvrir la datavisualisation tout en approfondissant mes connaissances sur les Jeux Olympiques.  Il aurait été intéressant, avec d'avantage de temps, de croiser notre dataset avec d'avantages d'informations, tel que les budgets exacts de chaque édition pour pousser encore plus loin notre analyse financière.
 
 # Annexe
 Flavien : Partie 1, préparation de la présentation
